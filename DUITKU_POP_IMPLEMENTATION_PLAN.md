@@ -1,6 +1,6 @@
 # DUITKU POP — Implementation Plan
 
-> **Status:** Draft implementation plan — requirement baseline approved; implementation not authorized  
+> **Status:** Approved branch-only Sandbox implementation scope (2026-11-07); no database mutation or deployment  
 > **Tanggal:** 2026-11-07  
 > **Repository:** `alfazarqom/wasowo-02`  
 > **Branch target:** `main`  
@@ -12,6 +12,21 @@
 > **Edge Function prefix:** `divoom-`  
 > **Shipping:** flat Rp52.000
 
+## Amendment — approved execution scope (2026-11-07)
+
+This amendment supersedes quote-based steps in the draft below for the current branch:
+
+- Payment display: Duitku POP JavaScript Popup (`checkout.process`).
+- Checkout flow: frontend submits customer/items directly to `divoom-duitku-create-invoice`; the backend creates order, order items, payment record, and Duitku invoice.
+- Amount approval: the frontend sends `expectedTotalAmount` only as a consistency guard. The backend recalculates prices from `divoom_products` and rejects a mismatch with HTTP 409 before creating the order or invoice. No separate quote table or quote endpoint is in scope.
+- Environment: Sandbox only; the Edge Function must reject any non-Sandbox configuration.
+- Repository branch: `feature/duitku-pop-sandbox-review`, created from `main`.
+- Changes are limited to this Git branch. No active Supabase migration, Edge Function deployment, secret mutation, production payment, or merge is authorized by this approval.
+- Guest status lookup remains limited to the existing order-ID plus matching-email check; no new guest-authentication mechanism is introduced.
+- Product stock reservation/decrement and explicit expiry settings remain out of scope.
+
+The remaining sections below are the original design background. Where they conflict with this amendment (especially quote flow and approval gates), this amendment takes precedence.
+
 Dokumen ini merinci urutan, komponen, kontrak, pengujian, dan batas perubahan yang direncanakan. Dokumen ini **bukan izin implementasi**. Tidak ada source code, migration, database, secrets, konfigurasi merchant, atau deployment yang diubah saat dokumen ini disusun.
 
 ---
@@ -20,7 +35,7 @@ Dokumen ini merinci urutan, komponen, kontrak, pengujian, dan batas perubahan ya
 
 | Area | Keputusan baseline |
 |---|---|
-| Final amount | Backend menghasilkan quote final; pembeli menyetujui total sebelum invoice dibuat. |
+| Final amount | Backend menghitung total otoritatif; frontend mengirim `expectedTotalAmount` sebagai consistency guard. Jika berbeda, backend mengembalikan 409 sebelum membuat order/invoice. Tidak ada tahap quote terpisah. |
 | Callback race | Callback sebelum reference tersimpan harus disimpan dan direkonsiliasi secara idempotent. |
 | Invoice timeout | Hasil ambigu tidak boleh langsung dianggap gagal final; recovery tidak boleh membuat invoice duplikat. |
 | Success page | Status sukses harus diverifikasi dari backend saat halaman dibuka. |
@@ -541,7 +556,7 @@ Jangan mengasumsikan parameter expiry atau provider inquiry hanya dari contoh la
 
 ## 17. Approval gates
 
-### Telah disetujui sebagai requirement baseline
+### Keputusan scope implementasi yang telah disetujui
 
 - [x] Backend quote dan final total approval.
 - [x] Callback race dan idempotent reconciliation.
@@ -554,7 +569,7 @@ Jangan mengasumsikan parameter expiry atau provider inquiry hanya dari contoh la
 - [x] Schema/migration reconciliation wajib dilakukan.
 - [x] Ongkir Rp52.000.
 
-### Belum disetujui sebagai izin implementasi
+### Tetap memerlukan persetujuan terpisah
 
 - [ ] Perubahan source code frontend.
 - [ ] Perubahan Edge Functions.
