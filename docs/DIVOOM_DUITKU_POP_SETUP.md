@@ -22,6 +22,8 @@ There is no separate quote table or quote-approval endpoint in this approved sco
 
 - `src/config/backend.ts` — public Edge Function base URL and endpoint constants; no Supabase anon/publishable key is used in the browser.
 - `src/context/AppContext.tsx` — reads the product catalog from `get-divoom-products`; no local seed fallback.
+- `supabase/config.toml` — tracks the current `verify_jwt=false` settings for the public storefront and Duitku functions.
+- `supabase/functions/get-divoom-products/index.ts` — source copied from the active read-only catalog Edge Function so the storefront backend is represented in the repository.
 - `src/pages/CheckoutPage.tsx` — sends item IDs, quantities, and expected total.
 - `src/pages/PaymentPage.tsx` — Sandbox popup and server status polling.
 - `src/pages/PaymentReturnPage.tsx` — reads server status; does not trust redirect result codes.
