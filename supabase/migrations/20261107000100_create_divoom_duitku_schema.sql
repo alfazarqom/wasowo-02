@@ -86,7 +86,7 @@ alter table public.divoom_checkout_rate_limits enable row level security;
 -- No anon/authenticated policies: all writes and guest status reads go through Edge Functions.
 revoke all on public.divoom_orders, public.divoom_order_items,
   public.divoom_payment_transactions, public.divoom_payment_callback_events,
-  public.divoom_checkout_rate_limits from anon, authenticated;
+  public.divoom_checkout_rate_limits from public, anon, authenticated;
 grant all on public.divoom_orders, public.divoom_order_items,
   public.divoom_payment_transactions, public.divoom_payment_callback_events,
   public.divoom_checkout_rate_limits to service_role;
