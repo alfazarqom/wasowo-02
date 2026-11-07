@@ -260,8 +260,11 @@ export default function App() {
   const [usingFallbackData, setUsingFallbackData] = useState<boolean>(false);
 
   // Router state
-  const [activeRoute, setActiveRoute] = useState<string>('home');
-  const [routeParam, setRouteParam] = useState<string | null>(null);
+  const [activeRoute, setActiveRoute] = useState<string>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.has('payment_return') || params.has('merchantOrderId') ? 'payment-return' : 'home';
+  });
+  const [routeParam, setRouteParam] = useState<string | null>(() => new URLSearchParams(window.location.search).get('merchantOrderId'));
 
   // Cart & Wishlist with localStorage
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -1538,7 +1541,9 @@ function OrderTrackingPage() {
 
 // --- 13. CHECKOUT PAGE ---
 function CheckoutPage() {
-  const { cart, clearCart, navigate } = useApp();
+  const { cart, clearCart, navigate, showToast } = useApp();
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -1548,12 +1553,44 @@ function CheckoutPage() {
   });
 
   const subtotal = cart.reduce((sum, item) => sum + ((item.product.sale_price ?? item.product.price) * item.quantity), 0);
+  const shippingCost = 52000;
+  const totalAmount = subtotal + shippingCost;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.address) return;
-    clearCart();
-    navigate('order-success', 'DEMO-SUCCESS-101');
+    if (submitting || cart.length === 0) return;
+    if (!formData.name.trim() || !formData.email.trim() || !formData.address.trim()) return;
+
+    setSubmitting(true);
+    setFormError(null);
+    try {
+      const response = await fetch('https://mvwflakurihhakdrlteg.supabase.co/functions/v1/divoom-duitku-create-invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer: formData,
+          items: cart.map((item) => ({ productId: item.product.id, quantity: item.quantity }))
+        })
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload?.success || !payload?.data?.reference || !payload?.data?.merchantOrderId) {
+        throw new Error(payload?.error || 'Unable to create payment invoice.');
+      }
+
+      localStorage.setItem('divoom_pending_payment', JSON.stringify({
+        merchantOrderId: payload.data.merchantOrderId,
+        reference: payload.data.reference,
+        email: formData.email.trim().toLowerCase()
+      }));
+      clearCart();
+      navigate('payment', payload.data.merchantOrderId);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Checkout failed. Please try again.';
+      setFormError(message);
+      showToast(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -1619,11 +1656,13 @@ function CheckoutPage() {
             </div>
           </div>
 
+          {formError && <p role="alert" className="text-sm text-red-400">{formError}</p>}
           <button
             type="submit"
-            className="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-3 rounded-xl transition-transform active:scale-98 shadow-lg mt-4"
+            disabled={submitting || cart.length === 0}
+            className="w-full bg-pink-600 hover:bg-pink-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-transform active:scale-98 shadow-lg mt-4"
           >
-            Place Demo Order &rarr;
+            {submitting ? 'Preparing secure payment…' : 'Continue to Duitku Payment →'}
           </button>
         </form>
 
@@ -1638,9 +1677,15 @@ function CheckoutPage() {
               </div>
             ))}
           </div>
+          <div className="border-t border-neutral-700 pt-3 flex justify-between text-neutral-300 text-xs">
+            <span>Subtotal</span><span>{formatIDR(subtotal)}</span>
+          </div>
+          <div className="flex justify-between text-neutral-300 text-xs">
+            <span>Flat Shipping</span><span>{formatIDR(shippingCost)}</span>
+          </div>
           <div className="border-t border-neutral-700 pt-3 flex justify-between font-bold text-white text-sm">
-            <span>Payable Subtotal</span>
-            <span className="text-pink-400">{formatIDR(subtotal)}</span>
+            <span>Total Payment</span>
+            <span className="text-pink-400">{formatIDR(totalAmount)}</span>
           </div>
         </div>
       </div>
@@ -1673,39 +1718,145 @@ function ContactPage() {
 
 // --- 15. PAYMENT PAGE (STANDALONE) ---
 function PaymentPage() {
-  const { navigate } = useApp();
+  const { routeParam, navigate } = useApp();
+  const [message, setMessage] = useState('Loading Duitku payment…');
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const stored = localStorage.getItem('divoom_pending_payment');
+    const pending = stored ? JSON.parse(stored) : null;
+    const merchantOrderId = routeParam || pending?.merchantOrderId;
+    if (!pending?.reference || !pending?.email || !merchantOrderId || pending.merchantOrderId !== merchantOrderId) {
+      setMessage('Payment session not found. Please check your order status or contact support.');
+      return;
+    }
+
+    const checkStatus = async () => {
+      try {
+        const url = new URL('https://mvwflakurihhakdrlteg.supabase.co/functions/v1/divoom-duitku-create-invoice');
+        url.searchParams.set('merchantOrderId', merchantOrderId);
+        url.searchParams.set('email', pending.email);
+        const response = await fetch(url.toString());
+        const payload = await response.json();
+        if (!response.ok || !payload?.success) throw new Error(payload?.error || 'Unable to check payment status.');
+        const status = payload.data.paymentStatus;
+        if (!cancelled) {
+          setPaymentStatus(status);
+          if (status === 'paid') {
+            setMessage('Payment confirmed by server.');
+            navigate('order-success', merchantOrderId);
+          } else if (status === 'failed' || status === 'expired') {
+            setMessage('Payment was not completed. Your order remains available for review.');
+          } else {
+            setMessage('Waiting for payment confirmation from Duitku…');
+          }
+        }
+      } catch {
+        if (!cancelled) setMessage('Payment is processing. We could not refresh its status just now.');
+      }
+    };
+
+    const scriptUrl = 'https://app-sandbox.duitku.com/lib/js/duitku.js';
+    const existingScript = document.querySelector('script[data-divoom-duitku="true"]') as HTMLScriptElement | null;
+    const launch = () => {
+      const duitkuWindow = window as Window & { checkout?: { process: (reference: string, options: Record<string, unknown>) => void } };
+      if (!duitkuWindow.checkout) {
+        setMessage('Duitku popup library is unavailable. Please reload this page or contact support.');
+        return;
+      }
+      setMessage('Duitku secure payment window is ready.');
+      duitkuWindow.checkout.process(pending.reference, {
+        defaultLanguage: 'id',
+        successEvent: () => { void checkStatus(); },
+        pendingEvent: () => { void checkStatus(); },
+        errorEvent: () => { void checkStatus(); },
+        closeEvent: () => { setMessage('Payment window closed. You can reopen it below.'); void checkStatus(); }
+      });
+    };
+
+    if (existingScript) {
+      if ((window as Window & { checkout?: unknown }).checkout) launch();
+      else existingScript.addEventListener('load', launch, { once: true });
+    } else {
+      const script = document.createElement('script');
+      script.src = scriptUrl;
+      script.async = true;
+      script.dataset.divoomDuitku = 'true';
+      script.onload = launch;
+      script.onerror = () => setMessage('Unable to load Duitku popup library.');
+      document.body.appendChild(script);
+    }
+
+    const interval = window.setInterval(() => { void checkStatus(); }, 5000);
+    void checkStatus();
+    return () => { cancelled = true; window.clearInterval(interval); };
+  }, [routeParam, navigate]);
+
+  const reopenPopup = () => {
+    const stored = localStorage.getItem('divoom_pending_payment');
+    const pending = stored ? JSON.parse(stored) : null;
+    const duitkuWindow = window as Window & { checkout?: { process: (reference: string, options: Record<string, unknown>) => void } };
+    if (pending?.reference && duitkuWindow.checkout) {
+      duitkuWindow.checkout.process(pending.reference, {
+        defaultLanguage: 'id',
+        successEvent: () => window.location.reload(),
+        pendingEvent: () => window.location.reload(),
+        errorEvent: () => window.location.reload(),
+        closeEvent: () => undefined
+      });
+    }
+  };
 
   return (
-    <div className="space-y-6 text-center">
-      <h1 className="text-2xl font-bold text-white">Payment Gateway Boundary</h1>
-      <p className="text-xs text-neutral-400 max-w-md mx-auto">
-        Live payment gateway (e.g. Midtrans, Xendit, Stripe) integration unavailable.
-      </p>
-      <button
-        onClick={() => navigate('payment-return')}
-        className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-6 py-2.5 rounded-lg"
-      >
-        Simulate Return Redirect &rarr;
+    <div className="space-y-6 text-center max-w-xl mx-auto">
+      <h1 className="text-2xl font-bold text-white">Duitku Secure Payment</h1>
+      <p className="text-sm text-neutral-300">{message}</p>
+      {paymentStatus && <p className="text-xs text-neutral-400">Server payment status: {paymentStatus}</p>}
+      <button onClick={reopenPopup} className="bg-pink-600 hover:bg-pink-500 text-white font-semibold text-sm px-6 py-3 rounded-lg">
+        Open Payment Window
       </button>
+      <p className="text-xs text-neutral-500">Payment is confirmed only after the verified server callback updates your order.</p>
     </div>
   );
 }
 
 // --- 16. PAYMENT RETURN PAGE (STANDALONE) ---
 function PaymentReturnPage() {
-  const { navigate } = useApp();
-
+  const [status, setStatus] = useState('Checking payment status with the server…');
+  useEffect(() => {
+    let cancelled = false;
+    const params = new URLSearchParams(window.location.search);
+    const merchantOrderId = params.get('merchantOrderId') || '';
+    const stored = localStorage.getItem('divoom_pending_payment');
+    const pending = stored ? JSON.parse(stored) : null;
+    if (!merchantOrderId || !pending?.email || pending.merchantOrderId !== merchantOrderId) {
+      setStatus('Order reference is unavailable. Please use Order Lookup or contact support.');
+      return;
+    }
+    const check = async () => {
+      try {
+        const url = new URL('https://mvwflakurihhakdrlteg.supabase.co/functions/v1/divoom-duitku-create-invoice');
+        url.searchParams.set('merchantOrderId', merchantOrderId);
+        url.searchParams.set('email', pending.email);
+        const response = await fetch(url.toString());
+        const payload = await response.json();
+        if (!response.ok || !payload?.success) throw new Error();
+        if (!cancelled) setStatus(`Server-confirmed payment status: ${payload.data.paymentStatus}`);
+      } catch {
+        if (!cancelled) setStatus('Payment status is not available yet. Please refresh in a moment.');
+      }
+    };
+    void check();
+    return () => { cancelled = true; };
+  }, []);
   return (
     <div className="space-y-6 text-center">
-      <h1 className="text-2xl font-bold text-white">Payment Gateway Return Callback</h1>
-      <p className="text-xs text-neutral-400 max-w-md mx-auto">
-        Browser parameters parsed safely. No claim of payment completion without server verification.
-      </p>
-      <button
-        onClick={() => navigate('order-success')}
-        className="bg-pink-600 text-white font-semibold text-xs px-6 py-2.5 rounded-lg"
-      >
-        View Order Status
+      <h1 className="text-2xl font-bold text-white">Payment Status</h1>
+      <p className="text-sm text-neutral-300">{status}</p>
+      <p className="text-xs text-neutral-500">The browser redirect is not proof of payment. The server callback is authoritative.</p>
+      <button onClick={() => window.location.assign('/')} className="bg-pink-600 text-white font-semibold text-xs px-6 py-2.5 rounded-lg">
+        Return to Store
       </button>
     </div>
   );
@@ -1723,9 +1874,9 @@ function OrderSuccessPage() {
         </svg>
       </div>
 
-      <h1 className="text-2xl sm:text-3xl font-extrabold text-white">Demo Order Placed!</h1>
+      <h1 className="text-2xl sm:text-3xl font-extrabold text-white">Order Payment Confirmed</h1>
       <p className="text-xs text-neutral-400 max-w-md mx-auto leading-relaxed">
-        Thank you for interacting with the Divoom Storefront single-page application.
+        Your payment status was confirmed by the verified Duitku server callback.
       </p>
 
       <button
