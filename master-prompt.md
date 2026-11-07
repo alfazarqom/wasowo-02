@@ -1,9 +1,9 @@
 # MASTER PROMPT FINAL — DIVOOM E-COMMERCE STOREFRONT APPLICATION
 
-**Version:** FINAL 1.1  
+**Version:** FINAL 1.2  
 **Project:** Divoom Storefront  
-**Platform:** Gemini Canvas  
-**Stack:** React, Vite, TypeScript  
+**Platform:** Existing GitHub repository (alfazarqom/wasowo-02)  
+**Stack:** React + TypeScript (App.tsx); verify actual project tooling  
 **Product source:** Supabase Edge Function `get-divoom-products`
 
 ---
@@ -12,7 +12,7 @@
 
 Act as a Senior Frontend Engineer, AI Application Architect, UI/UX Designer, React + TypeScript Engineer, and Quality Assurance Engineer.
 
-Build a complete, functional, maintainable, responsive single-store Divoom E-Commerce Storefront application in Gemini Canvas.
+Maintain and improve the existing single-store Divoom E-Commerce Storefront in alfazarqom/wasowo-02. The checked-in repository is the implementation source of truth; do not assume a Gemini Canvas environment.
 
 This is an implementation task, not merely a proposal, mockup, wireframe, or static prototype. Build working navigation, page layouts, reusable components, product browsing, variant selection, cart, wishlist, and a clearly bounded guest checkout experience.
 
@@ -25,10 +25,10 @@ Inspect the existing project before making changes. Preserve working functionali
 3. Never query `public.divoom_products` directly from browser code.
 4. Never use a frontend Supabase Database Client to retrieve product data.
 5. Never create mock, sample, hardcoded, or fallback product records.
-6. Do not modify the Supabase database, Edge Function, or backend configuration as part of this frontend task.
-7. Do not claim an order is persisted, a payment is completed, or a shipment is tracked unless a real backend confirms it.
+6. Do not execute migrations, alter a live Supabase database, deploy Edge Functions, change secrets, or change production configuration without separate explicit approval. Repository source changes are limited to the specifically approved scope.
+7. Treat server-side order/payment records and verified callback state as authoritative. Browser popup events, redirect parameters, and localStorage are never proof of payment.
 8. Do not add authentication, login, registration, or password flows.
-9. Do not silently substitute mock data when a request fails.
+9. Do not silently substitute mock, seed, demo, or fallback product data when a request fails.
 10. If a requirement cannot be implemented from verified information, identify the exact blocker and avoid fabricating a solution.
 
 ## 3. APPLICATION OBJECTIVE AND CUSTOMER JOURNEY
@@ -56,55 +56,25 @@ Use the existing package manager, scripts, folder conventions, linting, and form
 
 Keep secrets out of browser code. Never expose service-role keys or privileged credentials. Use only public client configuration and headers that are verified as required by the deployed Edge Function.
 
-## 4.1. REQUIRED GEMINI CANVAS DELIVERABLE — APP.JSX
+## 4.1. REQUIRED REPOSITORY DELIVERABLE — APP.TSX
 
-**The primary application deliverable MUST be a working `App.jsx` file created in the Gemini Canvas application.** This requirement is mandatory and takes precedence over any convention that would otherwise make `App.tsx` the only application entry point.
+**The current storefront implementation is App.tsx. Do not create or require App.jsx or Gemini Canvas.**
 
-### App.jsx requirements
-
-1. Create or update `App.jsx` as the primary React application entry point in Gemini Canvas.
-2. The Gemini Canvas preview must render the application through `App.jsx`. Do not deliver only a written plan, wireframe, screenshot, architecture description, or disconnected component snippets.
-3. `App.jsx` must integrate the application shell, route/page rendering, shared state, product service, navigation, responsive bottom-component rules, and overlay system.
-4. Keep `App.jsx` readable and maintainable. Extract reusable components, hooks, services, types, and utilities into supporting files when the Canvas project supports a multi-file structure.
-5. All supporting files must be imported and used by `App.jsx`; do not create unused or disconnected files.
-6. If Gemini Canvas is operating in a single-file environment, implement the complete working application in `App.jsx`, with clearly separated components and functions in that file.
-7. Do not substitute `App.tsx`, `main.tsx`, or another file as the sole deliverable. If the existing Vite project uses a TypeScript bootstrap, keep that bootstrap compatible and ensure it imports/renders `App.jsx`.
-8. Use JavaScript/JSX syntax in `App.jsx`. Supporting modules may use TypeScript where the existing project and Gemini Canvas support it. Do not add TypeScript-only syntax to `App.jsx`.
-9. If the existing project has a different entry point, inspect it and make the smallest safe integration change so that the active application ultimately renders `App.jsx`. Preserve existing project configuration where possible.
-10. Do not claim success merely because the file exists. Verify that Canvas can compile/render the application and that the preview displays the implemented storefront.
-
-### Required App.jsx integration
-
-The rendered application must include and connect:
-- AppShell and Standalone layouts.
-- Header, MainPage/active page, and Footer.
-- All 18 required pages and route handling.
-- Route-aware BottomNavigation / BottomActionBar selection.
-- Mobile-only BottomActionBar visibility and natural document flow.
-- Overlay management.
-- Centralized `get-divoom-products` service and shared product state.
-- Product grouping by `item_group_id` and real-record variant selection.
-- Cart and Wishlist state with localStorage persistence.
-- Guest checkout and honest unavailable-integration states.
-- Loading, empty, error, and not-found states.
-- Responsive mobile, tablet, and desktop rendering.
-
-### Gemini Canvas execution and verification
-
-- Work directly in the existing Gemini Canvas application/project.
-- Inspect the available file tree and current entry point before editing.
-- Create/update `App.jsx` and any required supporting files in Canvas.
-- Ensure all imports, exports, dependencies, and route references resolve.
-- Run or use the available Canvas preview/build feedback to identify compile-time and runtime errors.
-- Fix errors before reporting completion.
-- Test representative routes and viewport widths in the rendered preview.
-- If Canvas cannot create a requested supporting file or run a verification step, report that limitation explicitly; do not pretend it was completed.
+1. Inspect the actual repository tree, default branch, latest commit, and relevant files before editing.
+2. Preserve App.tsx as the current application source unless repository evidence proves a different active entry point.
+3. The audited repository snapshot contains App.tsx, master-prompt.md, one Duitku setup document, one SQL migration, and two Divoom Duitku Edge Functions. It does not contain a visible package.json, lockfile, Vite config, HTML entry point, src/ tree, or product Edge Function source. Recheck this before claiming the repository is independently buildable.
+4. Do not invent missing bootstrap files, package scripts, dependencies, build commands, or deployment configuration. Report missing tooling as a blocker.
+5. Make minimal changes and preserve existing routes, product behavior, payment flow, and styling unless a verified defect or approved requirement justifies a change.
+6. Verify with repository-supported checks only. If package metadata or a runtime is unavailable, mark checks BLOCKED or NOT RUN, never PASS.
+7. The deliverable is a coherent repository change, not a Canvas preview. Report exact paths, branch, commit, and checks actually completed.
 
 ## 5. VERIFIED PRODUCT DATA SOURCE
 
-The only product endpoint is:
+The current App.tsx references this product endpoint:
 
 `/functions/v1/get-divoom-products`
+
+**Repository verification boundary:** The repository does not contain the source for get-divoom-products or a product-service implementation. App.tsx currently hardcodes the Supabase project URL `https://mvwflakurihhakdrlteg.supabase.co`. Verify the intended project, deployed function source, schema, request headers, CORS behavior, and runtime response before treating this as the authoritative live contract. Do not silently change the project reference or endpoint.
 
 Supabase project reference previously inspected: `mvwflakurihhakdrlteg`.
 
@@ -555,18 +525,71 @@ Rules:
 
 ## 17. GUEST CHECKOUT, ORDERS, AND PAYMENTS
 
-Guest checkout is mandatory; authentication is not.
+Guest checkout is mandatory; authentication is not. Customer details are collected in CheckoutPage and orders are created through the existing Divoom Duitku backend.
 
-Customer details are collected in CheckoutPage. Do not create authentication flows.
+### 17.1. Existing repository backend
 
-No verified order persistence, payment gateway, shipping API, or tracking integration is included in the current product-data scope. Therefore:
-- Do not invent backend endpoints or database tables.
-- Do not claim orders persist across devices or sessions.
-- Do not claim payment has succeeded based on a client-side action.
-- Do not invent shipping prices or delivery estimates.
-- Keep demonstration behavior clearly labeled as a frontend demonstration.
-- Separate frontend form validation from actual order creation.
-- Keep payment and order pages structurally available while accurately communicating unavailable integrations.
+The repository contains:
+- supabase/functions/divoom-duitku-create-invoice/index.ts
+- supabase/functions/divoom-duitku-callback/index.ts
+- supabase/migrations/20261107000100_create_divoom_duitku_schema.sql
+- docs/DIVOOM_DUITKU_POP_SETUP.md
+
+Existing naming conventions:
+- Edge Functions: divoom-duitku-create-invoice and divoom-duitku-callback (prefix divoom-).
+- Tables/RPCs: divoom_orders, divoom_order_items, divoom_payment_transactions, divoom_payment_callback_events, divoom_checkout_rate_limits, divoom_consume_rate_limit, and divoom_apply_payment_callback (prefix divoom_).
+
+Do not create duplicate tables, payment systems, or alternative Edge Functions. Reuse and verify the existing contract.
+
+### 17.2. Source-inspected backend behavior
+
+The checked-in source currently indicates:
+- divoom-duitku-create-invoice accepts POST to create a guest order/payment invoice.
+- The same function accepts GET with merchantOrderId and email to retrieve guest order/payment status.
+- The Edge Function reloads product prices and availability from divoom_products and calculates the authoritative total server-side.
+- Flat shipping is Rp52.000. It is included as a separate Duitku invoice item and in the backend total.
+- Order, order-item, and pending payment records are created before the Duitku invoice request.
+- divoom-duitku-callback validates merchant code, amount, and HMAC signature, then delegates state handling to divoom_apply_payment_callback.
+- The migration enables RLS and grants privileged access to service_role; it is source only.
+
+These are source-inspected behaviors, not proof of deployment or live execution.
+
+### 17.3. Payment security and state rules
+
+1. Use only the existing create-invoice Edge Function to initiate invoices. Never call Duitku merchant APIs from browser code.
+2. Use only the existing callback function as the payment callback receiver. Browser code must never update payment/order status directly.
+3. Treat callback-verified backend state as authoritative. Popup events and return URL parameters may trigger a status refresh only; they cannot confirm payment.
+4. Guest status lookup must use both merchantOrderId and the matching checkout email as implemented by the backend. Never expose service-role credentials.
+5. Revalidate callback signature, merchant code, amount, merchant order ID, Duitku reference, duplicate delivery, and terminal-state handling against official Duitku POP documentation and the SQL function.
+6. Do not assume every result code other than 00 is a failed payment. Verify current official POP result-code rules, including payment-method-specific success codes, before changing or documenting callback status mapping. Keep SQL and Edge Function behavior consistent with the verified contract.
+7. Do not assume the migration has been applied or either function is deployed. Verify the intended Supabase project, deployed function names/configuration, secrets, and schema before live operations.
+8. The migration references public.divoom_products. Verify its existence, columns, constraints, and availability values in the intended Supabase project before migration execution.
+9. The current source checks availability = 'in stock'. The repository does not establish numeric stock quantity. Do not claim inventory reservation, decrement, or restoration; none is implemented in the checked-in migration/functions.
+10. Never create a real payment. Use sandbox or mocked tests only when separately authorized and safely configured.
+
+### 17.4. Frontend checkout and payment UI
+
+- Checkout sends customer details and productId/quantity rows to the existing create-invoice function. Client-calculated totals are never authoritative.
+- Display flat shipping Rp52.000 and the backend response total consistently.
+- Persist only the minimum guest lookup/payment reference needed by the UI in localStorage; do not treat localStorage as an order database or payment authority.
+- PaymentPage may open the Duitku POP JavaScript popup using the returned reference and the correct sandbox/production library selected from verified server configuration.
+- After any popup event, request the GET status endpoint. Show success only after the backend returns the confirmed paid state.
+- PaymentReturnPage must validate the returned merchant order ID against saved guest lookup context and retrieve status from the server.
+- OrderSuccessPage must not make a blanket success assertion on direct access. Confirm server-side paid status before displaying success.
+- OrdersPage and OrderDetailPage may display a locally remembered merchant order ID, but order/payment status must be reloaded from the backend.
+- OrderTrackingPage must not show a working Track button unless a real logistics integration is connected.
+- Keep pending, failed, expired, and unavailable states explicit and truthful.
+
+### 17.5. Known source-level risks to resolve or report
+
+- App.tsx currently contains REAL_AUDIT_SEED_DATA and uses it when product fetch fails. Remove this fallback and show an explicit error state.
+- App.tsx hardcodes the Supabase URL mvwflakurihhakdrlteg; verify it matches the intended project before reuse.
+- Product Edge Function source is absent from this repository snapshot. Do not claim its schema or runtime contract is verified from this repository alone.
+- The migration references public.divoom_products, which is not defined in the checked-in migration. Verify the live table before applying the migration.
+- The callback SQL maps 00 to paid and every other result code to failed. Verify this against official POP rules and supported payment methods before production use.
+- App.tsx stores full product objects in localStorage for cart items. Prefer stable product/variant IDs and reconcile them against freshly loaded product data.
+- App.tsx synthesizes General Pixel Gadgets when product_type is missing. Do not fabricate category labels; represent missing category data explicitly.
+- The repository snapshot lacks package/build metadata and a product-function source. Report build/runtime verification as blocked until a valid toolchain and endpoint evidence are available.
 
 ## 18. DESIGN SYSTEM AND RESPONSIVE UI
 
@@ -723,12 +746,15 @@ Follow this sequence. Do not skip inspection or verification.
 - Inspect the deployed `get-divoom-products` source and verify the runtime request/response contract.
 - Record confirmed facts separately from assumptions and blockers.
 
-### PHASE 1A — GEMINI CANVAS APP ENTRY POINT
-- Inspect how the current Gemini Canvas project represents files and selects its React entry point.
-- Create or update `App.jsx` as the mandatory primary application component.
-- Connect the active project bootstrap to render `App.jsx`; preserve the existing Vite/React setup where possible.
-- Decide whether supporting files can be created based on the actual Canvas project capabilities. If not, keep the implementation in `App.jsx`.
-- Confirm that the initial `App.jsx` renders in the Gemini Canvas preview before proceeding with the full page implementation.
+### PHASE 1A — REPOSITORY ENTRY POINT AND BACKEND INVENTORY
+- Confirm the active branch and latest commit.
+- Inspect the actual tree; identify whether App.tsx is the only application source or whether a bootstrap/build configuration exists elsewhere.
+- Verify package metadata, lockfile, scripts, TypeScript configuration, styles, and router dependencies before running commands or adding dependencies.
+- Verify the intended Supabase project and product endpoint. Product Edge Function source is absent from the current repository snapshot; mark the contract unverified until supported evidence is obtained.
+- Inspect the existing Divoom migration and both divoom- Edge Functions. Compare frontend request/response fields with the backend contract.
+- Verify flat Rp52.000 shipping, guest status lookup, callback signature, idempotency, amount/reference matching, and result-code mapping against official Duitku POP documentation.
+- Confirm deployment status and target Supabase project only through authorized evidence. Never deploy or execute migrations as part of a source-only task.
+- Record confirmed facts, indications, risks, and blockers before changing code.
 
 ### PHASE 2 — REQUIREMENTS AND ARCHITECTURE
 - Confirm the 18-page route map.
@@ -781,8 +807,8 @@ Do not claim a check passed unless it was actually run and its result inspected.
 
 The application is complete only when all applicable criteria below are verified:
 
-1. A working `App.jsx` file exists in the Gemini Canvas project and is the primary application component.
-2. The active Gemini Canvas application/preview renders through `App.jsx`; the file is not merely present but disconnected.
+1. The existing repository entry point and build setup are identified from actual files; App.tsx remains integrated with the real bootstrap.
+2. Required package/build metadata exists and the app compiles, or missing tooling is explicitly reported as BLOCKED.
 3. Supporting files, if created, are correctly imported and integrated; no required component or service is left disconnected.
 4. All 18 specified pages exist and route correctly.
 5. AppShell and Standalone layouts follow the defined structure.
@@ -810,44 +836,41 @@ The application is complete only when all applicable criteria below are verified
 27. No horizontal page overflow occurs at tested viewport widths.
 28. BottomActionBar is visible on mobile widths from 320px through 767px and absent at 768px and wider.
 29. BottomActionBar actions remain accessible on tablet/desktop through normal page controls, without a blank reserved bottom area.
-30. Available type checks, lint, build, tests, and/or Canvas preview checks pass, or failures are documented accurately.
-31. No critical runtime errors remain in the verified test flows.
+30. Available type checks, lint, build, tests, and runtime checks pass, or failures/blocked checks are documented accurately.
+31. No critical runtime errors remain in the verified test flows. Do not claim runtime verification when no runnable app setup is present.
 
 Do not mark a criterion as verified unless the relevant file, rendered preview, or test result was actually inspected. If Gemini Canvas does not expose a particular verification mechanism, mark that criterion Not verified and explain why.
  
 ## 24. FINAL DELIVERY REPORT
 
-At completion, provide a concise but evidence-based report containing:
-
-- Gemini Canvas project structure and active entry point inspected.
-- `App.jsx` file path and implementation status.
-- Confirmation whether the active Gemini Canvas preview renders through `App.jsx`.
-- Supporting files created and how they are integrated into `App.jsx`.
-- Application rendering/compile status and the exact verification method used.
-- Project structure inspected.
-- Architecture and routes implemented.
-- List of the 18 pages and their implementation status.
-- Reusable components created or reused.
-- Edge Function integration details and runtime verification status.
-- Product grouping and variant mapping behavior.
-- Product image mapping and missing-image handling.
-- Cart and wishlist behavior.
-- Guest checkout behavior and explicit integration limitations.
-- Type check, lint, build, and test results.
-- Route and responsive verification results.
-- Remaining blockers and unverified items.
+At completion, provide a concise, evidence-based report containing:
+- Repository, branch, base commit, and changed commit/PR if actually created.
+- Actual repository structure and application entry point.
+- Whether package/build metadata exists and which commands were genuinely available.
+- App.tsx implementation status and exact source files changed.
+- Route/page architecture and implementation status.
+- Product endpoint URL, project reference, request/response contract, and runtime verification status. Distinguish source references from verified deployed behavior.
+- Product grouping, variant selection, category mapping, and image handling.
+- Cart and wishlist persistence/reconciliation behavior.
+- Guest checkout request contract and backend-authoritative amount calculation.
+- Flat shipping amount: Rp52.000.
+- Existing Divoom migration and Edge Function source reviewed; state whether migration execution, secret configuration, and deployment were not performed.
+- Duitku popup, callback signature, idempotency, payment status verification, and result-code mapping verification.
+- Type check, lint, build, tests, and runtime results, each labeled PASS / FAIL / NOT RUN / BLOCKED.
+- Security/data impact, remaining risks, and rollback steps.
 
 Use these evidence labels:
 - **Verified:** directly inspected or successfully tested.
 - **Indication:** suggested by source or partial evidence but not fully tested.
 - **Not verified:** unavailable or not tested.
+- **Blocked:** could not be performed because required repository files, access, runtime, or approval were unavailable.
 
-Do not report the application as fully complete if critical acceptance criteria remain unverified or fail.
+Never report source inspection as proof of deployment or successful live execution.
 
 ## 26. FINAL EXECUTION INSTRUCTION
 
-Create and maintain the working application directly in the existing Gemini Canvas project, with `App.jsx` as the mandatory primary application component and rendered application entry. Prioritize correctness, maintainability, consistent architecture, accurate product mapping, and honest verification.
+Maintain the repository-native Divoom storefront using App.tsx and the actual bootstrap/build configuration found in alfazarqom/wasowo-02. Prioritize correctness, maintainability, accurate product mapping, and the existing Divoom Duitku POP backend contract.
 
-Preserve existing working functionality. Do not modify Supabase schema or Edge Functions. Do not fabricate product data or unsupported backend behavior.
+Preserve existing working functionality. Reuse the existing divoom- Edge Functions and divoom_ tables/RPCs; do not create duplicate payment infrastructure. Flat shipping is Rp52.000. The backend calculates the authoritative total. Product data must come only from the verified product Edge Function, never local seed/fallback records. Payment is confirmed only by trusted backend callback/status data.
 
-When blocked, state the exact missing information, the affected requirement, and the safest next step. Continue with independent requirements that can be implemented safely without inventing data or behavior.
+Do not execute migrations, deploy functions, change Supabase secrets/configuration, or perform live payments without separate explicit approval. When blocked, state the exact missing information, affected requirement, evidence status, and safest next step.
