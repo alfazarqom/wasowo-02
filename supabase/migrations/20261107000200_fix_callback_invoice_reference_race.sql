@@ -48,7 +48,7 @@ begin
       continue;
     end if;
 
-    if v_event.result_code not in ('00', '01') then
+    if v_event.result_code is null or v_event.result_code not in ('00', '01') then
       update public.divoom_payment_callback_events
         set processing_result = 'invalid_result_code'
         where id = v_event.id;
@@ -115,13 +115,19 @@ begin
   if not found then
     raise exception 'Unknown merchant order';
   end if;
-  if v_payment.payment_amount <> p_amount then
+  if p_event_hash is null or btrim(p_event_hash) = '' then
+    raise exception 'Callback event hash is required';
+  end if;
+  if p_merchant_order_id is null or btrim(p_merchant_order_id) = '' then
+    raise exception 'Merchant order ID is required';
+  end if;
+  if p_amount is null or v_payment.payment_amount <> p_amount then
     raise exception 'Callback amount mismatch';
   end if;
   if p_reference is null or btrim(p_reference) = '' then
     raise exception 'Callback reference is required';
   end if;
-  if p_result_code not in ('00', '01') then
+  if p_result_code is null or p_result_code not in ('00', '01') then
     raise exception 'Unsupported callback result code';
   end if;
 
