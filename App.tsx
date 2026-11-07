@@ -1616,13 +1616,35 @@ function CheckoutPage() {
     setSubmitting(true);
     setFormError(null);
     try {
+      const checkoutPayload = {
+        customer: {
+          name: formData.name.trim(),
+          email: formData.email.trim().toLowerCase(),
+          phone: formData.phone.trim(),
+          address: formData.address.trim(),
+          city: formData.city.trim()
+        },
+        items: cart.map((item) => ({ productId: item.product.id, quantity: item.quantity }))
+      };
+      const checkoutFingerprint = JSON.stringify(checkoutPayload);
+      let savedAttempt: { fingerprint?: string; key?: string } | null = null;
+      try {
+        savedAttempt = JSON.parse(localStorage.getItem('divoom_checkout_idempotency') || 'null');
+      } catch {
+        savedAttempt = null;
+      }
+      const idempotencyKey = savedAttempt?.fingerprint === checkoutFingerprint && savedAttempt.key
+        ? savedAttempt.key
+        : crypto.randomUUID();
+      localStorage.setItem('divoom_checkout_idempotency', JSON.stringify({
+        fingerprint: checkoutFingerprint,
+        key: idempotencyKey
+      }));
+
       const response = await fetch('https://mvwflakurihhakdrlteg.supabase.co/functions/v1/divoom-duitku-create-invoice', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customer: formData,
-          items: cart.map((item) => ({ productId: item.product.id, quantity: item.quantity }))
-        })
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
+        body: JSON.stringify(checkoutPayload)
       });
       const payload = await response.json();
       if (!response.ok || !payload?.success || !payload?.data?.reference || !payload?.data?.merchantOrderId) {
@@ -1635,6 +1657,7 @@ function CheckoutPage() {
         email: formData.email.trim().toLowerCase(),
         environment: payload.data.paymentScriptEnvironment
       }));
+      localStorage.removeItem('divoom_checkout_idempotency');
       clearCart();
       navigate('payment', payload.data.merchantOrderId);
     } catch (error) {
@@ -1772,8 +1795,9 @@ function ContactPage() {
 // --- 15. PAYMENT PAGE (STANDALONE) ---
 function PaymentPage() {
   const { routeParam, navigate } = useApp();
-  const [message, setMessage] = useState('Loading Duitku payment…');
+  const [message, setMessage] = useState('Preparing Duitku payment…');
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+  const [popupReady, setPopupReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -1813,31 +1837,27 @@ function PaymentPage() {
       ? 'https://app-prod.duitku.com/lib/js/duitku.js'
       : 'https://app-sandbox.duitku.com/lib/js/duitku.js';
     const existingScript = document.querySelector('script[data-divoom-duitku="true"]') as HTMLScriptElement | null;
-    const launch = () => {
-      const duitkuWindow = window as Window & { checkout?: { process: (reference: string, options: Record<string, unknown>) => void } };
-      if (!duitkuWindow.checkout) {
+    const markReady = () => {
+      if ((window as Window & { checkout?: unknown }).checkout) {
+        setPopupReady(true);
+        setMessage('Duitku secure payment is ready. Select the button to open the payment window.');
+      } else {
         setMessage('Duitku popup library is unavailable. Please reload this page or contact support.');
-        return;
       }
-      setMessage('Duitku secure payment window is ready.');
-      duitkuWindow.checkout.process(pending.reference, {
-        defaultLanguage: 'id',
-        successEvent: () => { void checkStatus(); },
-        pendingEvent: () => { void checkStatus(); },
-        errorEvent: () => { void checkStatus(); },
-        closeEvent: () => { setMessage('Payment window closed. You can reopen it below.'); void checkStatus(); }
-      });
     };
 
     if (existingScript) {
-      if ((window as Window & { checkout?: unknown }).checkout) launch();
-      else existingScript.addEventListener('load', launch, { once: true });
+      if ((window as Window & { checkout?: unknown }).checkout) markReady();
+      else {
+        existingScript.addEventListener('load', markReady, { once: true });
+        existingScript.addEventListener('error', () => setMessage('Unable to load Duitku popup library.'), { once: true });
+      }
     } else {
       const script = document.createElement('script');
       script.src = scriptUrl;
       script.async = true;
       script.dataset.divoomDuitku = 'true';
-      script.onload = launch;
+      script.onload = markReady;
       script.onerror = () => setMessage('Unable to load Duitku popup library.');
       document.body.appendChild(script);
     }
@@ -1847,18 +1867,40 @@ function PaymentPage() {
     return () => { cancelled = true; window.clearInterval(interval); };
   }, [routeParam]);
 
-  const reopenPopup = () => {
+  const openPaymentPopup = () => {
     const stored = localStorage.getItem('divoom_pending_payment');
     const pending = stored ? JSON.parse(stored) : null;
     const duitkuWindow = window as Window & { checkout?: { process: (reference: string, options: Record<string, unknown>) => void } };
-    if (pending?.reference && duitkuWindow.checkout) {
-      duitkuWindow.checkout.process(pending.reference, {
-        defaultLanguage: 'id',
-        successEvent: () => window.location.reload(),
-        pendingEvent: () => window.location.reload(),
-        errorEvent: () => window.location.reload(),
-        closeEvent: () => undefined
-      });
+    if (!pending?.reference || pending.merchantOrderId !== routeParam || !duitkuWindow.checkout || paymentStatus === 'paid') return;
+    duitkuWindow.checkout.process(pending.reference, {
+      defaultLanguage: 'id',
+      successEvent: () => { void checkStatusFromUserAction(); },
+      pendingEvent: () => { void checkStatusFromUserAction(); },
+      errorEvent: () => { void checkStatusFromUserAction(); },
+      closeEvent: () => { setMessage('Payment window closed. You can reopen it below.'); }
+    });
+  };
+
+  const checkStatusFromUserAction = async () => {
+    const stored = localStorage.getItem('divoom_pending_payment');
+    const pending = stored ? JSON.parse(stored) : null;
+    if (!pending?.email || !pending?.merchantOrderId) return;
+    try {
+      const url = new URL('https://mvwflakurihhakdrlteg.supabase.co/functions/v1/divoom-duitku-create-invoice');
+      url.searchParams.set('merchantOrderId', pending.merchantOrderId);
+      url.searchParams.set('email', pending.email);
+      const response = await fetch(url.toString());
+      const payload = await response.json();
+      if (!response.ok || !payload?.success) throw new Error();
+      const status = payload.data.paymentStatus;
+      setPaymentStatus(status);
+      setMessage(status === 'paid'
+        ? 'Payment confirmed by server. You can now view your order confirmation.'
+        : status === 'failed' || status === 'expired'
+          ? 'Payment was not completed. Your order remains available for review.'
+          : 'Waiting for payment confirmation from Duitku…');
+    } catch {
+      setMessage('Payment is processing. We could not refresh its status just now.');
     }
   };
 
@@ -1868,7 +1910,7 @@ function PaymentPage() {
       <p className="text-sm text-neutral-300">{message}</p>
       {paymentStatus && <p className="text-xs text-neutral-400">Server payment status: {paymentStatus}</p>}
       <div className="flex flex-wrap justify-center gap-3">
-        <button onClick={reopenPopup} className="bg-pink-600 hover:bg-pink-500 text-white font-semibold text-sm px-6 py-3 rounded-lg">
+        <button onClick={openPaymentPopup} disabled={!popupReady || paymentStatus === 'paid'} className="bg-pink-600 hover:bg-pink-500 disabled:opacity-50 text-white font-semibold text-sm px-6 py-3 rounded-lg">
           Open Payment Window
         </button>
         {paymentStatus === 'paid' && <button onClick={() => navigate('order-success', routeParam)} className="bg-neutral-700 hover:bg-neutral-600 text-white font-semibold text-sm px-6 py-3 rounded-lg">
