@@ -7,14 +7,23 @@ export function PaymentPage() {
   const navigate = useNavigate();
   const [message, setMessage] = useState('Loading Duitku payment…');
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+  const [popupReady, setPopupReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    const stored = localStorage.getItem('divoom_pending_payment');
-    const pending = stored ? JSON.parse(stored) : null;
+    let pending: { merchantOrderId?: string; reference?: string; email?: string } | null = null;
+
+    try {
+      const stored = localStorage.getItem('divoom_pending_payment');
+      pending = stored ? JSON.parse(stored) : null;
+    } catch {
+      pending = null;
+    }
+
     const merchantOrderId = paramOrderId || pending?.merchantOrderId;
     if (!pending?.reference || !pending?.email || !merchantOrderId || pending.merchantOrderId !== merchantOrderId) {
       setMessage('Payment session not found. Please check your order status or contact support.');
+      setPopupReady(false);
       return;
     }
 
@@ -42,34 +51,38 @@ export function PaymentPage() {
       }
     };
 
-    const scriptUrl = 'https://app-sandbox.duitku.com/lib/js/duitku.js';
-    const existingScript = document.querySelector('script[data-divoom-duitku="true"]') as HTMLScriptElement | null;
-    const launch = () => {
-      const duitkuWindow = window as Window & { checkout?: { process: (reference: string, options: Record<string, unknown>) => void } };
+    const markPopupReady = () => {
+      const duitkuWindow = window as Window & { checkout?: unknown };
       if (!duitkuWindow.checkout) {
+        setPopupReady(false);
         setMessage('Duitku popup library is unavailable. Please reload this page or contact support.');
         return;
       }
-      setMessage('Duitku secure payment window is ready.');
-      duitkuWindow.checkout.process(pending.reference, {
-        defaultLanguage: 'id',
-        successEvent: () => { void checkStatus(); },
-        pendingEvent: () => { void checkStatus(); },
-        errorEvent: () => { void checkStatus(); },
-        closeEvent: () => { setMessage('Payment window closed. You can reopen it below.'); void checkStatus(); }
-      });
+      setPopupReady(true);
+      setMessage('Duitku secure payment window is ready. Select Open Payment Window to continue.');
     };
 
+    const scriptUrl = 'https://app-sandbox.duitku.com/lib/js/duitku.js';
+    const existingScript = document.querySelector('script[data-divoom-duitku="true"]') as HTMLScriptElement | null;
+
     if (existingScript) {
-      if ((window as Window & { checkout?: unknown }).checkout) launch();
-      else existingScript.addEventListener('load', launch, { once: true });
+      if ((window as Window & { checkout?: unknown }).checkout) {
+        markPopupReady();
+      } else {
+        existingScript.addEventListener('load', markPopupReady, { once: true });
+        existingScript.addEventListener('error', () => {
+          if (!cancelled) setMessage('Unable to load Duitku popup library.');
+        }, { once: true });
+      }
     } else {
       const script = document.createElement('script');
       script.src = scriptUrl;
       script.async = true;
       script.dataset.divoomDuitku = 'true';
-      script.onload = launch;
-      script.onerror = () => setMessage('Unable to load Duitku popup library.');
+      script.onload = markPopupReady;
+      script.onerror = () => {
+        if (!cancelled) setMessage('Unable to load Duitku popup library.');
+      };
       document.body.appendChild(script);
     }
 
@@ -79,16 +92,24 @@ export function PaymentPage() {
   }, [paramOrderId]);
 
   const reopenPopup = () => {
-    const stored = localStorage.getItem('divoom_pending_payment');
-    const pending = stored ? JSON.parse(stored) : null;
-    const duitkuWindow = window as Window & { checkout?: { process: (reference: string, options: Record<string, unknown>) => void } };
-    if (pending?.reference && duitkuWindow.checkout) {
+    let pending: { merchantOrderId?: string; reference?: string } | null = null;
+    try {
+      const stored = localStorage.getItem('divoom_pending_payment');
+      pending = stored ? JSON.parse(stored) : null;
+    } catch {
+      pending = null;
+    }
+
+    const duitkuWindow = window as Window & {
+      checkout?: { process: (reference: string, options: Record<string, unknown>) => void };
+    };
+    if (pending?.reference && pending.merchantOrderId === paramOrderId && duitkuWindow.checkout) {
       duitkuWindow.checkout.process(pending.reference, {
         defaultLanguage: 'id',
         successEvent: () => window.location.reload(),
         pendingEvent: () => window.location.reload(),
         errorEvent: () => window.location.reload(),
-        closeEvent: () => undefined
+        closeEvent: () => undefined,
       });
     }
   };
@@ -99,7 +120,11 @@ export function PaymentPage() {
       <p className="text-sm text-neutral-300">{message}</p>
       {paymentStatus && <p className="text-xs text-neutral-400">Server payment status: {paymentStatus}</p>}
       <div className="flex flex-wrap justify-center gap-3">
-        <button onClick={reopenPopup} className="bg-pink-600 hover:bg-pink-500 text-white font-semibold text-sm px-6 py-3 rounded-lg shadow-lg">
+        <button
+          onClick={reopenPopup}
+          disabled={!popupReady || paymentStatus === 'paid' || paymentStatus === 'failed' || paymentStatus === 'expired' || paymentStatus === 'invoice_failed'}
+          className="bg-pink-600 hover:bg-pink-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm px-6 py-3 rounded-lg shadow-lg"
+        >
           Open Payment Window
         </button>
         {paymentStatus === 'paid' && (
