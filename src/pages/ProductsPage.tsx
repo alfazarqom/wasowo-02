@@ -5,7 +5,7 @@ import { LoadingGrid } from '../components/common/LoadingGrid';
 import { EmptyState } from '../components/common/EmptyState';
 
 export function ProductsPage() {
-  const { productGroups, loading } = useApp();
+  const { productGroups, loading, error } = useApp();
   const [filterType, setFilterType] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('featured');
 
@@ -65,6 +65,10 @@ export function ProductsPage() {
 
       {loading ? (
         <LoadingGrid />
+      ) : error ? (
+        <div role="alert" className="rounded-xl border border-red-900/60 bg-red-950/20 p-6 text-center text-sm text-red-300">
+          Product catalog is temporarily unavailable. Please try again later.
+        </div>
       ) : filteredGroups.length === 0 ? (
         <EmptyState title="No products found" subtitle="Try clearing your category or sort filters." />
       ) : (
