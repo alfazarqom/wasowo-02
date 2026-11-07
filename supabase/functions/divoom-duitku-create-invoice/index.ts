@@ -158,50 +158,6 @@ Deno.serve(async (req: Request) => {
       items: [...requested.entries()].sort(([a], [b]) => a.localeCompare(b)),
     }));
 
-    const ids = [...requested.keys()];
-    const { data: products, error: productError } = await supabase
-      .from("divoom_products")
-      .select("id,title,availability,price,sale_price")
-      .in("id", ids);
-
-    if (productError) {
-      console.error("Product validation failed:", productError.message);
-      return json({ success: false, error: "Unable to validate products." }, 500);
-    }
-    if (!products || products.length !== ids.length) {
-      return json({ success: false, error: "One or more products are no longer available." }, 409);
-    }
-
-    const productById = new Map(products.map((product) => [String(product.id), product]));
-    const orderItems = [];
-    let subtotal = 0;
-
-    for (const [productId, quantity] of requested) {
-      const product = productById.get(productId);
-      if (!product || String(product.availability ?? "").trim().toLowerCase() !== "in stock") {
-        return json({ success: false, error: `Product unavailable: ${productId}` }, 409);
-      }
-      const price = Number(product.sale_price ?? product.price);
-      if (!Number.isSafeInteger(price) || price < 0) {
-        return json({ success: false, error: "Product price is invalid." }, 500);
-      }
-      const lineTotal = price * quantity;
-      if (!Number.isSafeInteger(lineTotal)) return json({ success: false, error: "Order amount is invalid." }, 400);
-      subtotal += lineTotal;
-      orderItems.push({
-        product_id: productId,
-        product_title: String(product.title),
-        unit_price: price,
-        quantity,
-      });
-    }
-
-    const shippingCost = 52000;
-    const totalAmount = subtotal + shippingCost;
-    if (!Number.isSafeInteger(totalAmount) || totalAmount <= 0) {
-      return json({ success: false, error: "Order total is invalid." }, 400);
-    }
-
     // A repeated checkout request with the same key must reuse its original invoice.
     const { data: existingOrder, error: existingOrderError } = await supabase
       .from("divoom_orders")
@@ -254,6 +210,50 @@ Deno.serve(async (req: Request) => {
           reused: true,
         },
       });
+    }
+
+    const ids = [...requested.keys()];
+    const { data: products, error: productError } = await supabase
+      .from("divoom_products")
+      .select("id,title,availability,price,sale_price")
+      .in("id", ids);
+
+    if (productError) {
+      console.error("Product validation failed:", productError.message);
+      return json({ success: false, error: "Unable to validate products." }, 500);
+    }
+    if (!products || products.length !== ids.length) {
+      return json({ success: false, error: "One or more products are no longer available." }, 409);
+    }
+
+    const productById = new Map(products.map((product) => [String(product.id), product]));
+    const orderItems = [];
+    let subtotal = 0;
+
+    for (const [productId, quantity] of requested) {
+      const product = productById.get(productId);
+      if (!product || String(product.availability ?? "").trim().toLowerCase() !== "in stock") {
+        return json({ success: false, error: `Product unavailable: ${productId}` }, 409);
+      }
+      const price = Number(product.sale_price ?? product.price);
+      if (!Number.isSafeInteger(price) || price < 0) {
+        return json({ success: false, error: "Product price is invalid." }, 500);
+      }
+      const lineTotal = price * quantity;
+      if (!Number.isSafeInteger(lineTotal)) return json({ success: false, error: "Order amount is invalid." }, 400);
+      subtotal += lineTotal;
+      orderItems.push({
+        product_id: productId,
+        product_title: String(product.title),
+        unit_price: price,
+        quantity,
+      });
+    }
+
+    const shippingCost = 52000;
+    const totalAmount = subtotal + shippingCost;
+    if (!Number.isSafeInteger(totalAmount) || totalAmount <= 0) {
+      return json({ success: false, error: "Order total is invalid." }, 400);
     }
 
     const merchantOrderId = `DV${Date.now()}${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`.slice(0, 50);
