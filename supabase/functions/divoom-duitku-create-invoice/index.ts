@@ -88,6 +88,26 @@ async function getOrderStatus(req: Request): Promise<Response> {
     return json({ success: false, error: "Unable to retrieve payment status." }, 500);
   }
 
+  if (payment?.duitku_reference) {
+    const { error: reconciliationError } = await supabase.rpc("divoom_reconcile_pending_payment_callbacks", {
+      p_merchant_order_id: merchantOrderId,
+      p_reference: payment.duitku_reference,
+    });
+    if (reconciliationError) {
+      console.error("Pending callback reconciliation failed:", reconciliationError.message);
+    }
+  }
+
+  const { data: refreshedPayment, error: refreshError } = await supabase
+    .from("divoom_payment_transactions")
+    .select("status, paid_at")
+    .eq("order_id", data.id)
+    .maybeSingle();
+  if (refreshError) {
+    console.error("Refreshed payment status lookup failed:", refreshError.message);
+    return json({ success: false, error: "Unable to retrieve payment status." }, 500);
+  }
+
   return json({
     success: true,
     data: {
@@ -96,8 +116,8 @@ async function getOrderStatus(req: Request): Promise<Response> {
       shippingCost: data.shipping_cost,
       totalAmount: data.total_amount,
       orderStatus: data.order_status,
-      paymentStatus: payment?.status ?? "pending",
-      paidAt: payment?.paid_at ?? null,
+      paymentStatus: refreshedPayment?.status ?? "pending",
+      paidAt: refreshedPayment?.paid_at ?? null,
     },
   });
 }
@@ -131,8 +151,8 @@ Deno.serve(async (req: Request) => {
     const merchantCode = requiredEnv("DUITKU_MERCHANT_CODE");
     const apiKey = requiredEnv("DUITKU_API_KEY");
     const environment = requiredEnv("DUITKU_ENV").toLowerCase();
-    if (environment !== "sandbox" && environment !== "production") {
-      return json({ success: false, error: "DUITKU_ENV must be sandbox or production." }, 500);
+    if (environment !== "sandbox") {
+      return json({ success: false, error: "This integration is restricted to Duitku Sandbox." }, 500);
     }
     const returnUrl = requiredEnv("STOREFRONT_RETURN_URL");
     const requested = new Map<string, number>();
@@ -192,6 +212,14 @@ Deno.serve(async (req: Request) => {
       return json({ success: false, error: "Order total is invalid." }, 400);
     }
 
+    const expectedTotalAmount = Number(payload?.expectedTotalAmount);
+    if (!Number.isSafeInteger(expectedTotalAmount) || expectedTotalAmount !== totalAmount) {
+      return json({
+        success: false,
+        error: "Cart total changed. Review the updated total before retrying checkout.",
+      }, 409);
+    }
+
     const merchantOrderId = `DV${Date.now()}${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`.slice(0, 50);
     const { data: order, error: orderError } = await supabase
       .from("divoom_orders")
@@ -248,7 +276,7 @@ Deno.serve(async (req: Request) => {
       phoneNumber: phone || undefined,
       customerVaName: name.slice(0, 20),
       itemDetails: orderItems.map((item) => ({
-        name: item.product_title.slice(0, 255),
+        name: item.product_title.trim().slice(0, 50) || "Product",
         price: item.unit_price,
         quantity: item.quantity,
       })).concat([{ name: "Shipping", price: shippingCost, quantity: 1 }]),
@@ -271,26 +299,66 @@ Deno.serve(async (req: Request) => {
       });
       providerData = await duitkuResponse.json();
     } catch (error) {
-      console.error("Duitku invoice request failed:", error instanceof Error ? error.message : "network error");
+      console.error("Duitku invoice request result is unknown:", error instanceof Error ? error.message : "network error");
       await supabase.from("divoom_payment_transactions")
-        .update({ status: "invoice_failed", provider_status_message: "Provider request failed", updated_at: new Date().toISOString() })
+        .update({
+          provider_status_message: "Create Invoice response unknown; awaiting a verified callback or operator reconciliation.",
+          updated_at: new Date().toISOString(),
+        })
         .eq("merchant_order_id", merchantOrderId);
-      return json({ success: false, error: "Payment provider is temporarily unavailable.", merchantOrderId }, 502);
+      return json({
+        success: false,
+        error: "Payment creation could not be confirmed. Do not retry this order automatically; contact support with the order ID.",
+        merchantOrderId,
+      }, 502);
     }
 
     const statusCode = String(providerData.statusCode ?? "");
     const reference = String(providerData.reference ?? "");
-    if (!duitkuResponse.ok || statusCode !== "00" || !reference) {
+    if (statusCode && statusCode !== "00") {
       await supabase.from("divoom_payment_transactions")
         .update({
           status: "invoice_failed",
-          provider_status_code: statusCode || null,
+          provider_status_code: statusCode,
           provider_status_message: String(providerData.statusMessage ?? "Invoice creation rejected").slice(0, 250),
           provider_response: { statusCode, statusMessage: providerData.statusMessage ?? null },
           updated_at: new Date().toISOString(),
         })
         .eq("merchant_order_id", merchantOrderId);
-      return json({ success: false, error: "Duitku did not create the payment invoice.", merchantOrderId }, 502);
+      await supabase.from("divoom_orders")
+        .update({ order_status: "payment_failed", updated_at: new Date().toISOString() })
+        .eq("merchant_order_id", merchantOrderId);
+      return json({ success: false, error: "Duitku rejected the payment invoice request.", merchantOrderId }, 502);
+    }
+
+    if (!duitkuResponse.ok || statusCode !== "00" || !reference) {
+      await supabase.from("divoom_payment_transactions")
+        .update({
+          provider_status_code: statusCode || null,
+          provider_status_message: "Create Invoice response is ambiguous; payment remains pending for callback reconciliation.",
+          provider_response: { statusCode, statusMessage: providerData.statusMessage ?? null },
+          updated_at: new Date().toISOString(),
+        })
+        .eq("merchant_order_id", merchantOrderId);
+      return json({
+        success: false,
+        error: "Duitku invoice result could not be confirmed. Do not retry this order automatically; contact support with the order ID.",
+        merchantOrderId,
+      }, 502);
+    }
+
+    const { data: existingPayment, error: existingPaymentError } = await supabase
+      .from("divoom_payment_transactions")
+      .select("duitku_reference")
+      .eq("merchant_order_id", merchantOrderId)
+      .single();
+    if (existingPaymentError || !existingPayment) {
+      console.error("Payment reference pre-save lookup failed:", existingPaymentError?.message);
+      return json({ success: false, error: "Invoice was created but payment state could not be checked. Contact support with the order ID.", merchantOrderId }, 500);
+    }
+    if (existingPayment.duitku_reference && existingPayment.duitku_reference !== reference) {
+      console.error("Duitku reference mismatch for merchant order:", merchantOrderId);
+      return json({ success: false, error: "Payment reference mismatch. Contact support with the order ID.", merchantOrderId }, 409);
     }
 
     const { error: saveReferenceError } = await supabase.from("divoom_payment_transactions")
@@ -306,6 +374,14 @@ Deno.serve(async (req: Request) => {
     if (saveReferenceError) {
       console.error("Duitku reference persistence failed:", saveReferenceError.message);
       return json({ success: false, error: "Invoice was created but its reference could not be saved. Contact support with the order ID.", merchantOrderId }, 500);
+    }
+
+    const { error: reconciliationError } = await supabase.rpc("divoom_reconcile_pending_payment_callbacks", {
+      p_merchant_order_id: merchantOrderId,
+      p_reference: reference,
+    });
+    if (reconciliationError) {
+      console.error("Pending callback reconciliation after invoice save failed:", reconciliationError.message);
     }
 
     return json({
