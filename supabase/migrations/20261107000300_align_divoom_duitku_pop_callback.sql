@@ -180,7 +180,9 @@ begin
 end;
 $$;
 
-create or replace function public.divoom_apply_payment_callback(
+drop function if exists public.divoom_apply_payment_callback(text,text,bigint,text,text,text);
+
+create function public.divoom_apply_payment_callback(
   p_event_hash text,
   p_merchant_order_id text,
   p_amount bigint,
