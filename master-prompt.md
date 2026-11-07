@@ -839,7 +839,7 @@ The application is complete only when all applicable criteria below are verified
 30. Available type checks, lint, build, tests, and runtime checks pass, or failures/blocked checks are documented accurately.
 31. No critical runtime errors remain in the verified test flows. Do not claim runtime verification when no runnable app setup is present.
 
-Do not mark a criterion as verified unless the relevant file, rendered preview, or test result was actually inspected. If Gemini Canvas does not expose a particular verification mechanism, mark that criterion Not verified and explain why.
+Do not mark a criterion as verified unless the relevant repository file, running application, or test result was actually inspected. If the repository lacks a verification mechanism, mark that criterion Not verified or Blocked and explain why.
  
 ## 24. FINAL DELIVERY REPORT
 
