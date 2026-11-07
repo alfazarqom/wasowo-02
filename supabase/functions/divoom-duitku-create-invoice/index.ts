@@ -308,6 +308,17 @@ Deno.serve(async (req: Request) => {
       return json({ success: false, error: "Invoice was created but its reference could not be saved. Contact support with the order ID.", merchantOrderId }, 500);
     }
 
+    // A signed callback can arrive before Duitku's invoice reference is persisted.
+    // Reconcile any safely deferred callback only after the stored reference exists.
+    const { error: callbackReconcileError } = await supabase.rpc(
+      "divoom_reconcile_pending_payment_callbacks",
+      { p_merchant_order_id: merchantOrderId, p_reference: reference },
+    );
+    if (callbackReconcileError) {
+      // The callback event remains queued; a repeated provider callback can retry reconciliation.
+      console.error("Deferred callback reconciliation failed:", callbackReconcileError.message);
+    }
+
     return json({
       success: true,
       data: {
