@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { EDGE_FUNCTIONS } from '../config/backend';
 
 export function PaymentPage() {
   const { merchantOrderId: paramOrderId } = useParams<{ merchantOrderId?: string }>();
@@ -19,7 +20,7 @@ export function PaymentPage() {
 
     const checkStatus = async () => {
       try {
-        const url = new URL('https://mvwflakurihhakdrlteg.supabase.co/functions/v1/divoom-duitku-create-invoice');
+        const url = new URL(EDGE_FUNCTIONS.duitkuCheckout);
         url.searchParams.set('merchantOrderId', merchantOrderId);
         url.searchParams.set('email', pending.email);
         const response = await fetch(url.toString());
@@ -30,7 +31,7 @@ export function PaymentPage() {
           setPaymentStatus(status);
           if (status === 'paid') {
             setMessage('Payment confirmed by server. You can now view your order confirmation.');
-          } else if (status === 'failed' || status === 'expired') {
+          } else if (status === 'failed' || status === 'expired' || status === 'invoice_failed') {
             setMessage('Payment was not completed. Your order remains available for review.');
           } else {
             setMessage('Waiting for payment confirmation from Duitku…');
@@ -41,9 +42,7 @@ export function PaymentPage() {
       }
     };
 
-    const scriptUrl = pending.environment === 'production'
-      ? 'https://app-prod.duitku.com/lib/js/duitku.js'
-      : 'https://app-sandbox.duitku.com/lib/js/duitku.js';
+    const scriptUrl = 'https://app-sandbox.duitku.com/lib/js/duitku.js';
     const existingScript = document.querySelector('script[data-divoom-duitku="true"]') as HTMLScriptElement | null;
     const launch = () => {
       const duitkuWindow = window as Window & { checkout?: { process: (reference: string, options: Record<string, unknown>) => void } };
