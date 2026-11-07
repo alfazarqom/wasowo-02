@@ -958,6 +958,7 @@ function ProductDetailPage() {
 
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
   const [quantity, setQuantity] = useState<number>(1);
+  const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
 
   useEffect(() => {
     if (group && group.variants.length > 0) {
@@ -971,7 +972,6 @@ function ProductDetailPage() {
 
   const activeVariant = group.variants.find(v => v.id === selectedVariantId) || group.variants[0];
   const galleryImages = sanitizeImageList(activeVariant.image_link, activeVariant.additional_image_link);
-  const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
 
   return (
     <div className="space-y-8">
