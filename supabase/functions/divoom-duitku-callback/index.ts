@@ -57,6 +57,9 @@ Deno.serve(async (req: Request) => {
     if (!merchantCode || !amountText || !merchantOrderId || !reference || !signature || !resultCode) {
       return new Response("Bad Request", { status: 400, headers: corsHeaders });
     }
+    if (resultCode !== "00" && resultCode !== "01") {
+      return new Response("Unsupported resultCode", { status: 400, headers: corsHeaders });
+    }
 
     const expectedMerchantCode = Deno.env.get("DUITKU_MERCHANT_CODE") ?? "";
     const apiKey = Deno.env.get("DUITKU_API_KEY") ?? "";
