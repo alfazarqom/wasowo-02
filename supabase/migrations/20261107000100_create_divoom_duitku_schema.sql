@@ -41,7 +41,7 @@ create table if not exists public.divoom_payment_transactions (
   payment_amount bigint not null check (payment_amount > 0),
   payment_method text,
   status text not null default 'pending'
-    check (status in ('pending','paid','failed','expired','invoice_failed')),
+    check (status in ('pending','paid','failed','expired','invoice_failed','invoice_unknown')),
   provider_status_code text,
   provider_status_message text,
   provider_response jsonb,
