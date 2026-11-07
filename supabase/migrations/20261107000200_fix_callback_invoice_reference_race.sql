@@ -1,5 +1,6 @@
 -- Resolve Duitku callbacks that arrive before createInvoice reference persistence.
--- Apply manually after reviewing. This migration is not deployed by this change.
+-- Apply only after reconciling this migration with the target project's migration history.
+-- This repository change does not apply this migration to Supabase.
 begin;
 
 create or replace function public.divoom_reconcile_pending_payment_callbacks(
@@ -26,7 +27,8 @@ begin
     raise exception 'Unknown merchant order';
   end if;
 
-  if v_payment.duitku_reference is null
+  if p_reference is null or btrim(p_reference) = ''
+     or v_payment.duitku_reference is null
      or v_payment.duitku_reference is distinct from p_reference then
     raise exception 'Invoice reference is not persisted or does not match';
   end if;
@@ -42,6 +44,13 @@ begin
     if v_event.duitku_reference is distinct from v_payment.duitku_reference then
       update public.divoom_payment_callback_events
         set processing_result = 'reference_mismatch'
+        where id = v_event.id;
+      continue;
+    end if;
+
+    if v_event.result_code not in ('00', '01') then
+      update public.divoom_payment_callback_events
+        set processing_result = 'invalid_result_code'
         where id = v_event.id;
       continue;
     end if;
@@ -109,10 +118,25 @@ begin
   if v_payment.payment_amount <> p_amount then
     raise exception 'Callback amount mismatch';
   end if;
+  if p_reference is null or btrim(p_reference) = '' then
+    raise exception 'Callback reference is required';
+  end if;
+  if p_result_code not in ('00', '01') then
+    raise exception 'Unsupported callback result code';
+  end if;
 
   if v_payment.duitku_reference is not null
      and v_payment.duitku_reference is distinct from p_reference then
     raise exception 'Callback reference mismatch';
+  end if;
+
+  -- A signed callback can safely supply the provider reference when the
+  -- Create Invoice response was delayed or lost.
+  if v_payment.duitku_reference is null then
+    update public.divoom_payment_transactions
+      set duitku_reference = p_reference, updated_at = now()
+      where id = v_payment.id;
+    v_payment.duitku_reference := p_reference;
   end if;
 
   insert into public.divoom_payment_callback_events(
@@ -120,8 +144,7 @@ begin
     result_code, payment_code, processing_result
   ) values (
     p_event_hash, v_payment.order_id, p_merchant_order_id, p_reference,
-    p_result_code, p_payment_code,
-    case when v_payment.duitku_reference is null then 'awaiting_invoice_reference' else 'received' end
+    p_result_code, p_payment_code, 'received'
   )
   on conflict (event_hash) do nothing
   returning id into v_event_id;
@@ -131,18 +154,13 @@ begin
     from public.divoom_payment_callback_events
     where event_hash = p_event_hash;
 
-    if v_existing_result = 'awaiting_invoice_reference'
-       and v_payment.duitku_reference is not null then
+    if v_existing_result = 'awaiting_invoice_reference' then
       perform public.divoom_reconcile_pending_payment_callbacks(
         p_merchant_order_id, v_payment.duitku_reference
       );
     end if;
 
     return 'duplicate';
-  end if;
-
-  if v_payment.duitku_reference is null then
-    return 'awaiting_invoice_reference';
   end if;
 
   if v_payment.status <> 'pending' then
