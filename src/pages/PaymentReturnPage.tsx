@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { EDGE_FUNCTIONS } from '../config/backend';
 import { useSearchParams, Link } from 'react-router-dom';
 
 export function PaymentReturnPage() {
@@ -16,7 +17,7 @@ export function PaymentReturnPage() {
     }
     const check = async () => {
       try {
-        const url = new URL('https://mvwflakurihhakdrlteg.supabase.co/functions/v1/divoom-duitku-create-invoice');
+        const url = new URL(EDGE_FUNCTIONS.duitkuCheckout);
         url.searchParams.set('merchantOrderId', merchantOrderId);
         url.searchParams.set('email', pending.email);
         const response = await fetch(url.toString());
