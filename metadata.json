@@ -1,0 +1,8 @@
+{
+  "name": "Divoom Storefront",
+  "description": "Pixel art speakers, LED displays, retro gadgets, and smart accessories storefront with guest checkout and Duitku payment integration.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
