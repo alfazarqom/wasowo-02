@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { DivoomProduct, ProductGroup, CartItem } from '../types';
-import { REAL_AUDIT_SEED_DATA } from '../data/seedData';
+import { EDGE_FUNCTIONS } from '../config/backend';
 
 interface AppContextType {
   products: DivoomProduct[];
@@ -85,7 +85,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
       try {
-        const endpoint = 'https://mvwflakurihhakdrlteg.supabase.co/functions/v1/get-divoom-products';
+        const endpoint = EDGE_FUNCTIONS.products;
         const res = await fetch(endpoint, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' }
@@ -105,11 +105,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           throw new Error("Invalid payload contract received from Edge Function");
         }
       } catch (err: unknown) {
-        console.warn("Live API connection unreachable/failed. Reverting to audited schema dataset.", err);
+        console.error("Product API request failed; local seed fallback is disabled.", err);
         if (isMounted) {
-          setProducts(REAL_AUDIT_SEED_DATA);
-          setUsingFallbackData(true);
-          setError(null);
+          setProducts([]);
+          setUsingFallbackData(false);
+          setError(err instanceof Error ? err.message : "Unable to load products from the backend.");
         }
       } finally {
         if (isMounted) setLoading(false);
