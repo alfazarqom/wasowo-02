@@ -127,20 +127,26 @@ Before applying a callback, validate:
 - result code is a documented value;
 - the payment state transition is allowed.
 
-### Result codes
+### Result codes and an inconsistency in the official reference
 
-The POP callback parameter table documents:
+The current official Indonesian POP page contains two callback-code descriptions that do not fully agree:
 
-- `00`: Success.
-- `01`: Failed.
+- The HTTP Callback parameter table (Callback section) lists `00` = Success and `01` = Failed.
+- The Errors → API Response → Callback table lists `00` = Success and `02` = Failed.
+- Separately, the Duitku JS section labels the browser `pendingEvent` as event `01`. That is a browser event and must not be conflated with the HTTP Callback result-code contract.
 
-Accept only documented values unless the current official documentation is updated. Do not map arbitrary or unknown result codes to `failed`; reject or safely quarantine them for review without mutating payment state.
+Repository handling is deliberately conservative:
+
+- Only HTTP callback `00` may mark a payment as paid.
+- HTTP callback `01` and `02` are both accepted as documented non-success/failure values and never mark a payment as paid.
+- Any other or empty result code is durably quarantined as unsupported and cannot mutate the payment/order state.
+- Confirm the exact callback code behavior for the merchant's enabled payment channels with Duitku before production activation if Duitku supplies a code outside these documented values.
 
 A valid signature does not remove the need to validate merchant, order, amount, reference, idempotency, and state transition.
 
 ### Acknowledgment and retries
 
-The documentation requires HTTP `200 OK` and says Duitku retries callback delivery when it has not received HTTP 200, up to five attempts, after which it sends a failed-callback notification by email. It also documents dashboard callback resend.
+The documentation requires HTTP `200 OK` and says Duitku retries callback delivery when it has not received HTTP 200, up to five attempts, after which it sends a failed-callback notification by email. It also documents dashboard callback resend. The Errors section additionally documents HTTP 409 `The transaction is still in progress` and HTTP 400 `Amount is different please try again later` for concurrent/repeated Create Invoice requests using the same order ID; treat these as ambiguous and do not blindly create a second invoice.
 
 The documentation does not prescribe a mandatory response body. Return HTTP 200 only after the event is durably and safely handled (applied, recognized as a duplicate, or durably queued for reconciliation). If processing fails before durable handling, return a non-200 response so retry/recovery remains possible.
 
@@ -211,8 +217,10 @@ The return page must treat all query parameters as untrusted navigation context 
 - [ ] Duitku `reference` is persisted and tied to the correct payment.
 - [ ] Callback parser accepts the documented form content type.
 - [ ] Callback HMAC uses `merchantCode + amount + merchantOrderId`.
-- [ ] Unknown result codes do not mutate payment state.
+- [ ] HTTP callback `00` alone marks paid; documented `01`/`02` non-success values cannot mark paid; unknown values are quarantined.
 - [ ] Duplicate and early callbacks are durably/idempotently handled.
+- [ ] Create Invoice timeout, HTTP 409, HTTP 5xx, malformed response, and missing reference are treated as ambiguous, not as definitive rejection.
+- [ ] Successful Create Invoice response persists `reference` and `paymentUrl` and triggers early-callback reconciliation.
 - [ ] HTTP 200 is returned only after safe durable handling.
 - [ ] Popup JS events and return URL parameters never set payment status.
 - [ ] Order success UI is based only on an authoritative server status.
@@ -222,3 +230,5 @@ The return page must treat all query parameters as untrusted navigation context 
 ## 9. Review history
 
 - 2026-11-07 — Reviewed https://docs.duitku.com/pop/id/ and recorded the POP Create Invoice, Callback, JS Callback, Popup, Redirect, and payload constraints for this repository.
+- 2026-11-07 — Recorded the official page's callback result-code inconsistency (`01` in the callback parameter table vs `02` in Errors → API Response → Callback); implementation only treats `00` as paid and quarantines values outside `00`, `01`, and `02`.
+- 2026-11-07 — Aligned the repository migration and Edge Functions with item name length, callback event persistence, callback reconciliation, and ambiguous Create Invoice outcomes.
