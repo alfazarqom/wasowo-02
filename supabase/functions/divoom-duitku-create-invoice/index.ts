@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type, x-client-info, apikey",
+  "Access-Control-Allow-Headers": "content-type, x-client-info, apikey, idempotency-key",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Content-Type": "application/json; charset=utf-8",
   "Cache-Control": "no-store",
@@ -109,6 +109,11 @@ Deno.serve(async (req: Request) => {
     if (req.method === "GET") return await getOrderStatus(req);
     if (req.method !== "POST") return json({ success: false, error: "Method not allowed." }, 405);
 
+    const idempotencyKey = (req.headers.get("Idempotency-Key") ?? "").trim();
+    if (idempotencyKey.length < 16 || idempotencyKey.length > 128) {
+      return json({ success: false, error: "A valid Idempotency-Key header is required." }, 400);
+    }
+
     const payload = await req.json();
     const customer = payload?.customer ?? {};
     const name = normalizeCustomer(customer.name, 120);
@@ -147,6 +152,11 @@ Deno.serve(async (req: Request) => {
     if (requested.size !== payload.items.length) {
       return json({ success: false, error: "Duplicate product rows are not allowed." }, 400);
     }
+
+    const requestFingerprint = await sha256Hex(JSON.stringify({
+      name, email, phone, address, city,
+      items: [...requested.entries()].sort(([a], [b]) => a.localeCompare(b)),
+    }));
 
     const ids = [...requested.keys()];
     const { data: products, error: productError } = await supabase
@@ -192,11 +202,67 @@ Deno.serve(async (req: Request) => {
       return json({ success: false, error: "Order total is invalid." }, 400);
     }
 
+    // A repeated checkout request with the same key must reuse its original invoice.
+    const { data: existingOrder, error: existingOrderError } = await supabase
+      .from("divoom_orders")
+      .select("id,merchant_order_id,customer_email,checkout_request_hash,subtotal,shipping_cost,total_amount")
+      .eq("idempotency_key", idempotencyKey)
+      .maybeSingle();
+
+    if (existingOrderError) {
+      console.error("Idempotency lookup failed:", existingOrderError.message);
+      return json({ success: false, error: "Unable to verify checkout retry state." }, 500);
+    }
+
+    if (existingOrder) {
+      if (String(existingOrder.customer_email).toLowerCase() !== email ||
+          existingOrder.checkout_request_hash !== requestFingerprint) {
+        return json({ success: false, error: "This Idempotency-Key was already used for different checkout details." }, 409);
+      }
+
+      const { data: existingPayment, error: existingPaymentError } = await supabase
+        .from("divoom_payment_transactions")
+        .select("status,duitku_reference")
+        .eq("order_id", existingOrder.id)
+        .maybeSingle();
+
+      if (existingPaymentError) {
+        console.error("Idempotent payment lookup failed:", existingPaymentError.message);
+        return json({ success: false, error: "Unable to retrieve the existing payment attempt." }, 500);
+      }
+
+      if (!existingPayment?.duitku_reference) {
+        return json({
+          success: false,
+          error: existingPayment?.status === "invoice_failed"
+            ? "The previous invoice attempt failed. Start a new checkout attempt."
+            : "This checkout is already being processed. Retry shortly using the same checkout session.",
+          merchantOrderId: existingOrder.merchant_order_id,
+        }, 409);
+      }
+
+      return json({
+        success: true,
+        data: {
+          merchantOrderId: existingOrder.merchant_order_id,
+          reference: existingPayment.duitku_reference,
+          paymentAmount: existingOrder.total_amount,
+          subtotal: existingOrder.subtotal,
+          shippingCost: existingOrder.shipping_cost,
+          totalAmount: existingOrder.total_amount,
+          paymentScriptEnvironment: environment,
+          reused: true,
+        },
+      });
+    }
+
     const merchantOrderId = `DV${Date.now()}${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`.slice(0, 50);
     const { data: order, error: orderError } = await supabase
       .from("divoom_orders")
       .insert({
         merchant_order_id: merchantOrderId,
+        idempotency_key: idempotencyKey,
+        checkout_request_hash: requestFingerprint,
         customer_name: name,
         customer_email: email,
         customer_phone: phone || null,
@@ -210,6 +276,40 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (orderError || !order) {
+      // A concurrent request may have won the unique idempotency-key insert race.
+      const { data: racedOrder } = await supabase
+        .from("divoom_orders")
+        .select("id,merchant_order_id,customer_email,checkout_request_hash,subtotal,shipping_cost,total_amount")
+        .eq("idempotency_key", idempotencyKey)
+        .maybeSingle();
+
+      if (racedOrder &&
+          String(racedOrder.customer_email).toLowerCase() === email &&
+          racedOrder.checkout_request_hash === requestFingerprint) {
+        const { data: racedPayment } = await supabase
+          .from("divoom_payment_transactions")
+          .select("status,duitku_reference")
+          .eq("order_id", racedOrder.id)
+          .maybeSingle();
+
+        if (racedPayment?.duitku_reference) {
+          return json({
+            success: true,
+            data: {
+              merchantOrderId: racedOrder.merchant_order_id,
+              reference: racedPayment.duitku_reference,
+              paymentAmount: racedOrder.total_amount,
+              subtotal: racedOrder.subtotal,
+              shippingCost: racedOrder.shipping_cost,
+              totalAmount: racedOrder.total_amount,
+              paymentScriptEnvironment: environment,
+              reused: true,
+            },
+          });
+        }
+        return json({ success: false, error: "This checkout is already being processed. Retry shortly using the same checkout session." }, 409);
+      }
+
       console.error("Order insert failed:", orderError?.message);
       return json({ success: false, error: "Unable to create order." }, 500);
     }
