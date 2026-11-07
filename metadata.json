@@ -1,6 +1,6 @@
 {
-  "name": "Divoom Storefront",
-  "description": "Pixel art speakers, LED displays, retro gadgets, and smart accessories storefront with guest checkout and Duitku payment integration.",
+  "name": "Asri Collection",
+  "description": "Asri Collection — toko online di Sidenreng Rappang, Sulawesi Selatan. Hubungi +6281234336327 atau asricollections82@gmail.com.",
   "permissions": [],
   "capabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
