@@ -109,7 +109,7 @@ Deno.serve(async (req: Request) => {
     if (!merchantCode || !amountText || !merchantOrderId || !reference || !signature || !resultCode) {
       return textResponse("Bad Request", 400);
     }
-    if (!/^[1-9][0-9]*$/.test(amountText) || merchantOrderId.length > 50) {
+    if (!/^[0-9]+$/.test(amountText) || merchantOrderId.length > 50) {
       return textResponse("Bad Request", 400);
     }
 
