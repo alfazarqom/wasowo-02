@@ -5,6 +5,8 @@ begin;
 create table if not exists public.divoom_orders (
   id uuid primary key default gen_random_uuid(),
   merchant_order_id varchar(50) not null unique,
+  idempotency_key text not null unique,
+  checkout_request_hash text not null,
   customer_name text not null,
   customer_email text not null,
   customer_phone text,
@@ -144,6 +146,10 @@ declare
   v_order_status text;
   v_result text;
 begin
+  if p_result_code not in ('00', '01') then
+    raise exception 'Unsupported Duitku result code';
+  end if;
+
   select * into v_payment
   from public.divoom_payment_transactions
   where merchant_order_id = p_merchant_order_id
