@@ -21,7 +21,7 @@ export function PaymentPage() {
     })();
 
     const merchantOrderId = paramOrderId || pending?.merchantOrderId;
-    if (!pending?.reference || !pending?.email || !merchantOrderId || pending.merchantOrderId !== merchantOrderId) {
+    if (!pending?.email || !merchantOrderId || pending.merchantOrderId !== merchantOrderId) {
       setMessage('Payment session not found. Please check your order status or contact support.');
       setPopupReady(false);
       return;
@@ -42,6 +42,8 @@ export function PaymentPage() {
             setMessage('Payment confirmed by server. You can now view your order confirmation.');
           } else if (status === 'failed' || status === 'expired' || status === 'invoice_failed') {
             setMessage('Payment was not completed. Your order remains available for review.');
+          } else if (!pending.reference) {
+            setMessage('Invoice creation is being reconciled. Do not submit checkout again; contact support if this status does not change.');
           } else {
             setMessage('Waiting for payment confirmation from Duitku…');
           }
@@ -62,28 +64,33 @@ export function PaymentPage() {
       setMessage('Duitku secure payment window is ready. Select Open Payment Window to continue.');
     };
 
-    const scriptUrl = 'https://app-sandbox.duitku.com/lib/js/duitku.js';
-    const existingScript = document.querySelector('script[data-divoom-duitku="true"]') as HTMLScriptElement | null;
+    if (pending.reference) {
+      const scriptUrl = 'https://app-sandbox.duitku.com/lib/js/duitku.js';
+      const existingScript = document.querySelector('script[data-divoom-duitku="true"]') as HTMLScriptElement | null;
 
-    if (existingScript) {
-      if ((window as Window & { checkout?: unknown }).checkout) {
-        markPopupReady();
+      if (existingScript) {
+        if ((window as Window & { checkout?: unknown }).checkout) {
+          markPopupReady();
+        } else {
+          existingScript.addEventListener('load', markPopupReady, { once: true });
+          existingScript.addEventListener('error', () => {
+            if (!cancelled) setMessage('Unable to load Duitku popup library.');
+          }, { once: true });
+        }
       } else {
-        existingScript.addEventListener('load', markPopupReady, { once: true });
-        existingScript.addEventListener('error', () => {
+        const script = document.createElement('script');
+        script.src = scriptUrl;
+        script.async = true;
+        script.dataset.divoomDuitku = 'true';
+        script.onload = markPopupReady;
+        script.onerror = () => {
           if (!cancelled) setMessage('Unable to load Duitku popup library.');
-        }, { once: true });
+        };
+        document.body.appendChild(script);
       }
     } else {
-      const script = document.createElement('script');
-      script.src = scriptUrl;
-      script.async = true;
-      script.dataset.divoomDuitku = 'true';
-      script.onload = markPopupReady;
-      script.onerror = () => {
-        if (!cancelled) setMessage('Unable to load Duitku popup library.');
-      };
-      document.body.appendChild(script);
+      setPopupReady(false);
+      setMessage('Invoice creation is being reconciled. Do not submit checkout again; contact support if this status does not change.');
     }
 
     const interval = window.setInterval(() => { void checkStatus(); }, 5000);
