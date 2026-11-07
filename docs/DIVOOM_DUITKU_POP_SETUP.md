@@ -16,6 +16,7 @@ Official source: https://docs.duitku.com/pop/id/ (checked 2026-11-07). The curre
 - `docs/DUITKU_POP_SOURCE_OF_TRUTH.md` — canonical provider contract and project constraints.
 - `supabase/migrations/20261107000100_create_divoom_duitku_schema.sql`
 - `supabase/migrations/20261107000200_fix_callback_invoice_reference_race.sql`
+- `supabase/migrations/20261107000300_align_divoom_duitku_pop_callback.sql` — additive protocol alignment, callback metadata, invoice outcome state, and atomic callback reconciliation.
 - `supabase/functions/divoom-duitku-create-invoice/index.ts`
 - `supabase/functions/divoom-duitku-callback/index.ts`
 - `src/pages/CheckoutPage.tsx`
@@ -53,7 +54,7 @@ Never expose the service-role key to the browser. Do not read or print secret va
 
 - HTTP `POST`, `application/x-www-form-urlencoded`.
 - Callback signature: HMAC-SHA256 of `merchantCode + amount + merchantOrderId`, keyed by the merchant API key.
-- Documented result codes: `00` = success; `01` = failed. Unknown codes must not be silently mapped to failed or used to mutate payment state.
+- The official POP page is internally inconsistent: the HTTP Callback parameter table lists `00` success / `01` failed, while Errors → API Response → Callback lists `00` success / `02` failed. The implementation treats only `00` as paid, accepts `01` and `02` as non-success/failure, and durably quarantines all other codes. The JS `pendingEvent` is a browser event and is not the HTTP callback result code contract.
 - Validate signature, merchant code, merchant order ID, amount, reference, and allowed state transition.
 - Duitku requires HTTP `200 OK` and retries when it does not receive HTTP 200, up to five attempts according to the current documentation. Acknowledge only after the callback has been safely and durably handled.
 
@@ -82,13 +83,21 @@ The following are code observations, not runtime test results:
 
 - Create Invoice request signature and endpoint selection currently follow the documented POP contract.
 - Callback transport and callback signature formula currently follow the documented POP contract.
-- Create Invoice currently truncates `itemDetails.name` to 255 characters; this must be corrected to the documented 50-character limit.
-- Callback currently treats every non-`00` result code as failed; it must explicitly validate documented codes and safely reject/quarantine unknown values.
-- Create Invoice network exceptions currently set local payment status to `invoice_failed`; an ambiguous provider outcome must not be treated as a definitive rejection.
-- After saving the Duitku reference, the current Create Invoice handler does not invoke callback reconciliation.
+- Create Invoice now limits `itemDetails.name` to 50 characters and verifies that item detail line totals equal `paymentAmount`.
+- HTTP callback now validates the documented form content type, exact amount text in the HMAC input, merchant, signature, order, amount, and reference.
+- Only callback `resultCode=00` can mark paid. The official documentation's `01`/`02` discrepancy is explicitly handled as non-success; unknown codes are durably quarantined.
+- Early callbacks are durably stored and reconciled atomically after the Create Invoice response's `reference` is persisted.
+- Network timeout, malformed provider response, missing reference, HTTP 409, HTTP 5xx, and documented concurrent-request messages are handled as ambiguous invoice outcomes; the function does not blindly retry or mark them as definitive failures.
+- Successful Create Invoice response persists `reference` and `paymentUrl` through the new `divoom_record_invoice_result` RPC.
 - Checkout currently creates the invoice directly without a separately persisted buyer approval bound to the final backend quote.
 - Order Success currently renders a confirmed-payment message without verifying a server-authoritative status.
 - Guest order lookup is not to be expanded until the deferred secure access mechanism is decided.
+
+## Verification status
+
+- Static repository edits are committed on `feature/duitku-pop-hardening`.
+- No Deno tests, TypeScript build, lint, SQL migration execution, Supabase function deployment, or live Sandbox transaction has been run as part of this repository-only change.
+- The existing guest order status GET path in the Create Invoice function is not redesigned in this task; its security hardening remains a deferred dependency and must not be treated as approved guest order lookup.
 
 ## Operational boundary
 
