@@ -1648,6 +1648,9 @@ function CheckoutPage() {
       });
       const payload = await response.json();
       if (!response.ok || !payload?.success || !payload?.data?.reference || !payload?.data?.merchantOrderId) {
+        if (response.status === 409 && String(payload?.error || '').includes('previous invoice attempt failed')) {
+          localStorage.removeItem('divoom_checkout_idempotency');
+        }
         throw new Error(payload?.error || 'Unable to create payment invoice.');
       }
 
