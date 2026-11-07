@@ -322,7 +322,7 @@ Rules:
 - BottomComponent exists once per AppShell.
 - BottomNavigation and BottomActionBar are mutually exclusive.
 - Select the bottom component from the active page route.
-- BottomActionBar remains in natural document flow; never use fixed or absolute positioning for it.
+- BottomActionBar is mobile-only (320px–767px), remains in natural document flow, and is not rendered on tablet/desktop (768px and wider). Never use fixed, sticky, or absolute positioning for it.
 - Overlays are managed independently from page content.
 - Do not duplicate shared layout components inside individual pages.
 
@@ -456,7 +456,7 @@ Rules:
 - Only one bottom component may render at a time.
 - Bottom component selection must follow the active route.
 - Standalone pages render neither component.
-- BottomActionBar must remain in natural document flow and must not be fixed or absolute.
+- BottomActionBar renders only on mobile (320px–767px), remains in natural document flow, and must not be fixed, sticky, or absolute. It is hidden/unmounted at 768px and wider.
 
 ## 14. OVERLAYS
 
@@ -543,16 +543,59 @@ Create reusable design tokens for:
 - Layout widths
 - Z-index/layering
 - Interaction states
+- Responsive breakpoints
+
+### 18.1 Responsive viewport tiers
+
+The application must work across mobile, tablet, and desktop. Use these implementation tiers consistently unless the existing project already has an established, compatible breakpoint system:
+
+| Tier | Viewport width | Required behavior |
+|---|---:|---|
+| Small mobile | 320–359px | Compact layout; no horizontal page overflow; controls remain usable |
+| Standard mobile | 360–767px | Primary mobile storefront experience |
+| Tablet | 768–1023px | Tablet-optimized spacing, navigation, and content grid |
+| Desktop | 1024px and wider | Full desktop layout with appropriate content width and desktop navigation |
+
+Use mobile-first CSS and progressive enhancement. Breakpoints are layout rules, not fixed device assumptions. Test intermediate widths, not only the listed examples.
+
+### 18.2 BottomActionBar is mobile-only
+
+**BottomActionBar must render only on mobile viewports (320px–767px). It must never appear on tablet or desktop.**
+
+- Keep BottomActionBar in natural document flow on mobile; do not use `position: fixed`, `position: sticky`, or `position: absolute`.
+- At viewport widths of 768px and above, hide/unmount BottomActionBar and do not leave an empty reserved area, bottom padding, or layout gap for it.
+- On tablet and desktop, the relevant page actions must remain accessible through the page's normal content or an appropriate desktop control. Do not simply make those actions unavailable when BottomActionBar is hidden.
+- Preserve the existing route-to-BottomActionBar page mapping for mobile.
+- Standalone pages must not render BottomActionBar at any viewport width.
+- Do not replace BottomActionBar with BottomNavigation on desktop unless that behavior is explicitly specified elsewhere. The desktop navigation pattern should use the Header/page layout.
+- Ensure viewport resizing across 767px/768px does not leave stale component state, duplicate controls, or inaccessible actions.
+
+### 18.3 Layout and component adaptation
+
+- Use fluid widths and a readable maximum content width on large screens; center the main content where appropriate.
+- Avoid hardcoded page widths that cause overflow.
+- Product grids should adapt progressively: one column only when necessary on narrow screens, typically two columns on standard mobile, and more columns as available width increases. Choose exact column counts based on card readability and available space.
+- On tablet and desktop, use available horizontal space without stretching product cards or text excessively.
+- Header, navigation, forms, product detail gallery, cart, checkout, footer, and overlays must each have intentional mobile, tablet, and desktop layouts.
+- On narrow screens, stack multi-column content when needed; on wider screens, use columns where they improve scanability.
+- Images must be responsive, preserve intended aspect ratios, and avoid layout shifts.
+- Tables or dense product specifications must remain readable; use responsive stacking or a contained horizontal scroller only for the table region when necessary, never for the entire page.
+- Prevent long product titles, URLs, and unbroken text from forcing horizontal overflow.
+- Account for mobile browser safe areas only where controls genuinely approach device edges. Do not use safe-area padding to simulate a fixed bottom bar.
+- Ensure page content remains reachable and is not obscured by navigation, overlays, or browser UI.
+
+### 18.4 Mobile usability and accessibility
+
+- Provide touch targets that are comfortably usable; aim for at least 44×44 CSS pixels for primary interactive controls.
+- Do not rely on hover to expose essential actions.
+- Keep text readable without requiring pinch zoom.
+- Use visible focus states, semantic controls, accessible labels, and logical keyboard navigation.
+- Check color contrast and error/help text visibility.
+- Ensure dialogs, drawers, quick views, and BottomSheet fit within small viewports and can be dismissed accessibly.
+
+### 18.5 Visual consistency
 
 Use consistent typography, spacing, controls, buttons, form fields, product cards, and visual hierarchy.
-
-Responsive requirements:
-- Support mobile, tablet, and desktop.
-- Avoid horizontal overflow.
-- Maintain readable content and usable touch targets.
-- Keep product grids and navigation appropriate to viewport size.
-- Ensure image placeholders preserve layout dimensions and prevent layout shifts.
-- Provide visible focus states and accessible labels.
 
 Do not invent a brand identity, logo asset, or business contact details if none are provided. Use existing project assets and verified brand configuration where available.
 
@@ -677,7 +720,7 @@ Follow this sequence. Do not skip inspection or verification.
 - Verify gallery URL validation and deduplication.
 - Verify missing-image behavior.
 - Verify cart and wishlist persistence and reconciliation.
-- Verify responsive behavior and no horizontal overflow.
+- Verify responsive behavior at representative mobile, tablet, and desktop widths, including the 767px/768px BottomActionBar boundary and no horizontal overflow.
 - Verify no fake payment/order/tracking success.
 - Report any unverified behavior or remaining blockers.
 
@@ -690,8 +733,10 @@ The application is complete only when:
 1. All 18 specified pages exist and route correctly.
 2. AppShell and Standalone layouts follow the defined structure.
 3. Footer appears once per layout, not duplicated inside pages.
-4. BottomNavigation and BottomActionBar follow the exact route rules and are mutually exclusive.
-5. BottomActionBar is in natural document flow.
+4. BottomNavigation and BottomActionBar follow the exact route rules and are mutually exclusive on mobile.
+5. BottomActionBar appears only at 320px–767px; it is not rendered at 768px and wider.
+6. Hiding BottomActionBar on tablet/desktop leaves no empty reserved area, and the relevant actions remain accessible through page content or desktop controls.
+7. BottomActionBar is in natural document flow and is never fixed, sticky, or absolute.
 6. All product data originates exclusively from `get-divoom-products`.
 7. No frontend direct query to `divoom_products` exists.
 8. No mock, hardcoded, or fallback product records exist.
@@ -707,9 +752,12 @@ The application is complete only when:
 18. No unsupported order, payment, shipping, or tracking capability is claimed.
 19. Loading, empty, error, and not-found states are implemented.
 20. Direct URL navigation and refresh work.
-21. Responsive layouts work on mobile, tablet, and desktop.
-22. Type checks/build/tests available in the project pass, or failures are documented accurately.
-23. No critical runtime errors remain in the verified test flows.
+24. Responsive layouts work on mobile, tablet, and desktop, including narrow widths and intermediate viewport sizes.
+25. No horizontal page overflow occurs at tested viewport widths.
+26. BottomActionBar is visible on mobile widths from 320px through 767px and absent at 768px and wider.
+27. BottomActionBar actions remain accessible on tablet/desktop through normal page controls, without a blank reserved bottom area.
+28. Type checks/build/tests available in the project pass, or failures are documented accurately.
+29. No critical runtime errors remain in the verified test flows.
 
 ## 24. FINAL DELIVERY REPORT
 
