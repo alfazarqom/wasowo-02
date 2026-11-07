@@ -220,7 +220,7 @@ begin
   end if;
 
   if p_amount_text is null
-     or p_amount_text !~ '^[0-9]+
+     or p_amount_text !~ '^[0-9]+$'
      or p_amount <= 0
      or p_amount_text::numeric <> p_amount then
     raise exception 'Callback amount text and numeric amount do not match';
