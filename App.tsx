@@ -1466,29 +1466,48 @@ function ProfilePage() {
 // --- 10. ORDERS PAGE ---
 function OrdersPage() {
   const { navigate } = useApp();
+  const [lastOrder, setLastOrder] = useState<any>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('divoom_pending_payment');
+    if (stored) {
+      try { setLastOrder(JSON.parse(stored)); } catch { setLastOrder(null); }
+    }
+  }, []);
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Order History</h1>
-        <p className="text-xs text-neutral-400">Guest session order ledger boundary.</p>
+        <p className="text-xs text-neutral-400">Guest orders created in this browser session.</p>
       </div>
 
-      <div className="bg-neutral-800/40 border border-neutral-700/80 rounded-xl p-8 text-center space-y-3">
-        <svg className="w-12 h-12 text-neutral-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        <h3 className="text-sm font-bold text-white">No Backend Order Persistence Connected</h3>
-        <p className="text-xs text-neutral-400 max-w-md mx-auto leading-relaxed">
-          Orders are processed in client-side demonstration mode. Connect a Supabase order table to record order history permanently across sessions.
-        </p>
-        <button
-          onClick={() => navigate('products')}
-          className="mt-2 bg-pink-600 hover:bg-pink-500 text-white text-xs font-semibold px-4 py-2 rounded-lg"
-        >
-          Explore Catalog
-        </button>
-      </div>
+      {lastOrder?.merchantOrderId ? (
+        <div className="bg-neutral-800/60 border border-neutral-700 rounded-xl p-6 space-y-4">
+          <div className="flex justify-between gap-3 text-xs">
+            <span className="text-neutral-400">Merchant Order ID</span>
+            <span className="font-mono text-white">{lastOrder.merchantOrderId}</span>
+          </div>
+          <p className="text-xs text-neutral-400">Order and payment status are retrieved from Supabase using the guest email saved for this checkout.</p>
+          <button
+            onClick={() => navigate('order-detail', lastOrder.merchantOrderId)}
+            className="bg-pink-600 hover:bg-pink-500 text-white text-xs font-semibold px-4 py-2 rounded-lg"
+          >
+            View Order Status
+          </button>
+        </div>
+      ) : (
+        <div className="bg-neutral-800/40 border border-neutral-700/80 rounded-xl p-8 text-center space-y-3">
+          <h3 className="text-sm font-bold text-white">No recent guest order in this browser</h3>
+          <p className="text-xs text-neutral-400 max-w-md mx-auto leading-relaxed">After checkout, your latest merchant order ID is saved locally so you can reopen its server-confirmed status here.</p>
+          <button
+            onClick={() => navigate('products')}
+            className="mt-2 bg-pink-600 hover:bg-pink-500 text-white text-xs font-semibold px-4 py-2 rounded-lg"
+          >
+            Explore Catalog
+          </button>
+        </div>
+      )}
     </div>
   );
 }
