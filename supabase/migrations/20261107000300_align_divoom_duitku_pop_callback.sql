@@ -213,9 +213,98 @@ begin
     raise exception 'Unknown merchant order';
   end if;
 
+  if p_amount_text is null
+     or p_amount_text !~ '^[1-9][0-9]*
+    when v_payment.duitku_reference is not null
+      and v_payment.duitku_reference is distinct from p_reference then 'reference_mismatch'
+    when v_payment.duitku_reference is null then 'awaiting_invoice_reference'
+    else 'received'
+  end;
+
+  insert into public.divoom_payment_callback_events(
+    event_hash, order_id, merchant_order_id, duitku_reference,
+    result_code, payment_code, processing_result, amount, amount_text, provider_metadata
+  ) values (
+    p_event_hash, v_payment.order_id, p_merchant_order_id, p_reference,
+    p_result_code, p_payment_code, v_processing_result, p_amount,
+    p_amount_text, coalesce(p_provider_metadata, '{}'::jsonb)
+  )
+  on conflict (event_hash) do nothing
+  returning id into v_event_id;
+
+  if v_event_id is null then
+    select processing_result into v_existing_result
+    from public.divoom_payment_callback_events
+    where event_hash = p_event_hash;
+
+    if v_existing_result = 'awaiting_invoice_reference'
+       and v_payment.duitku_reference is not null then
+      perform public.divoom_reconcile_pending_payment_callbacks(
+        p_merchant_order_id, v_payment.duitku_reference
+      );
+    end if;
+
+    return 'duplicate';
+  end if;
+
+  if v_processing_result <> 'received' then
+    return v_processing_result;
+  end if;
+
+  if v_payment.status <> 'pending' then
+    update public.divoom_payment_callback_events
+      set processing_result = 'ignored_terminal_state'
+      where id = v_event_id;
+    return 'ignored';
+  end if;
+
+  v_next_status := case when p_result_code = '00' then 'paid' else 'failed' end;
+  v_order_status := case when p_result_code = '00' then 'paid' else 'payment_failed' end;
+
+  update public.divoom_payment_transactions
+    set status = v_next_status,
+        payment_method = coalesce(nullif(p_payment_code, ''), payment_method),
+        callback_metadata = coalesce(p_provider_metadata, '{}'::jsonb),
+        paid_at = case when v_next_status = 'paid' then now() else null end,
+        updated_at = now()
+    where id = v_payment.id;
+
+  update public.divoom_orders
+    set order_status = v_order_status, updated_at = now()
+    where id = v_payment.order_id;
+
+  update public.divoom_payment_callback_events
+    set processing_result = v_next_status
+    where id = v_event_id;
+
+  return v_next_status;
+end;
+$$;
+
+revoke all on function public.divoom_reconcile_pending_payment_callbacks(text,text)
+  from public, anon, authenticated;
+grant execute on function public.divoom_reconcile_pending_payment_callbacks(text,text)
+  to service_role;
+
+revoke all on function public.divoom_record_invoice_result(text,text,text,text,text,jsonb)
+  from public, anon, authenticated;
+grant execute on function public.divoom_record_invoice_result(text,text,text,text,text,jsonb)
+  to service_role;
+
+revoke all on function public.divoom_apply_payment_callback(text,text,bigint,text,text,text,text,jsonb)
+  from public, anon, authenticated;
+grant execute on function public.divoom_apply_payment_callback(text,text,bigint,text,text,text,text,jsonb)
+  to service_role;
+
+commit;
+
+     or p_amount_text::numeric <> p_amount then
+    raise exception 'Callback amount text and numeric amount do not match';
+  end if;
+
   v_processing_result := case
     when v_payment.payment_amount <> p_amount then 'amount_mismatch'
-    when p_result_code not in ('00','01','02') then 'unsupported_result_code'
+    when p_result_code is null or p_result_code not in ('00','01','02') then 'unsupported_result_code'
     when v_payment.duitku_reference is not null
       and v_payment.duitku_reference is distinct from p_reference then 'reference_mismatch'
     when v_payment.duitku_reference is null then 'awaiting_invoice_reference'
