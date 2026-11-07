@@ -3,7 +3,7 @@ import { LegalDocumentConfig } from '../types/legal';
 export const termsAndConditionsConfig: LegalDocumentConfig = {
   slug: '/terms-and-conditions',
   title: 'Syarat dan Ketentuan',
-  subtitle: 'Ketentuan resmi penggunaan website, katalog produk, dan transaksi belanja di Divoom Store Indonesia.',
+  subtitle: 'Ketentuan resmi penggunaan website, katalog produk, dan transaksi belanja di Asri Collection Indonesia.',
   badge: 'Perjanjian Pengguna',
   effectiveDate: '01 Januari 2026',
   lastUpdated: '06 November 2026',
@@ -13,8 +13,8 @@ export const termsAndConditionsConfig: LegalDocumentConfig = {
       id: 'ketentuan-umum',
       heading: '1. Ketentuan Umum & Definisi',
       paragraphs: [
-        'Selamat datang di Divoom Store. Dengan mengakses, menjelajahi, atau melakukan pembelian pada website ini, Anda menyatakan telah membaca, memahami, dan menyetujui seluruh Syarat dan Ketentuan yang berlaku.',
-        '"Divoom Store" mengacu pada platform storefront digital resmi yang menyediakan produk perangkat audio, pixel display, dan aksesoris pintar Divoom. "Pengguna" atau "Pelanggan" adalah setiap individu yang mengakses atau melakukan pemesanan melalui platform ini baik sebagai tamu (guest) maupun pengguna terdaftar.'
+        'Selamat datang di Asri Collection. Dengan mengakses, menjelajahi, atau melakukan pembelian pada website ini, Anda menyatakan telah membaca, memahami, dan menyetujui seluruh Syarat dan Ketentuan yang berlaku.',
+        '"Asri Collection" mengacu pada platform storefront digital resmi yang menyediakan produk perangkat audio, pixel display, dan aksesoris pintar Divoom. "Pengguna" atau "Pelanggan" adalah setiap individu yang mengakses atau melakukan pemesanan melalui platform ini baik sebagai tamu (guest) maupun pengguna terdaftar.'
       ],
       bullets: [
         'Layanan ini ditujukan untuk pengguna berusia minimal 18 tahun atau yang berada di bawah pengawasan orang tua/wali.',
@@ -25,11 +25,11 @@ export const termsAndConditionsConfig: LegalDocumentConfig = {
       id: 'akun-dan-tamu',
       heading: '2. Sesi Pengguna & Belanja Mode Tamu',
       paragraphs: [
-        'Divoom Store mendukung sistem transaksi Guest Checkout di mana data keranjang belanja dan preferensi disimpan secara lokal di peramban (browser local storage). Pelanggan bertanggung jawab untuk memastikan keakuratan informasi kontak dan alamat pengiriman saat checkout.'
+        'Asri Collection mendukung sistem transaksi Guest Checkout di mana data keranjang belanja dan preferensi disimpan secara lokal di peramban (browser local storage). Pelanggan bertanggung jawab untuk memastikan keakuratan informasi kontak dan alamat pengiriman saat checkout.'
       ],
       bullets: [
         'Pelanggan wajib memberikan nama lengkap, nomor telepon aktif, dan alamat email yang valid untuk pengiriman konfirmasi transaksi dan invoice.',
-        'Divoom Store tidak bertanggung jawab atas kegagalan pengiriman akibat kesalahan input alamat atau data kontak oleh pelanggan.'
+        'Asri Collection tidak bertanggung jawab atas kegagalan pengiriman akibat kesalahan input alamat atau data kontak oleh pelanggan.'
       ]
     },
     {
@@ -77,7 +77,7 @@ export const termsAndConditionsConfig: LegalDocumentConfig = {
 export const privacyPolicyConfig: LegalDocumentConfig = {
   slug: '/privacy-policy',
   title: 'Kebijakan Privasi',
-  subtitle: 'Bagaimana Divoom Store mengumpulkan, mengelola, melindungi, dan menghormati data pribadi Anda.',
+  subtitle: 'Bagaimana Asri Collection mengumpulkan, mengelola, melindungi, dan menghormati data pribadi Anda.',
   badge: 'Perlindungan Data',
   effectiveDate: '01 Januari 2026',
   lastUpdated: '06 November 2026',
@@ -87,7 +87,7 @@ export const privacyPolicyConfig: LegalDocumentConfig = {
       id: 'informasi-yang-dikumpulkan',
       heading: '1. Informasi Pribadi yang Dikumpulkan',
       paragraphs: [
-        'Kami menghormati privasi Anda dan berkomitmen menjaga kerahasiaan informasi personal pelanggan. Ketika Anda melakukan pemesanan melalui Divoom Store, kami hanya mengumpulkan informasi yang esensial untuk memproses pesanan dan pengiriman.'
+        'Kami menghormati privasi Anda dan berkomitmen menjaga kerahasiaan informasi personal pelanggan. Ketika Anda melakukan pemesanan melalui Asri Collection, kami hanya mengumpulkan informasi yang esensial untuk memproses pesanan dan pengiriman.'
       ],
       bullets: [
         'Data Identitas: Nama lengkap penerima pesanan.',
@@ -113,7 +113,7 @@ export const privacyPolicyConfig: LegalDocumentConfig = {
       id: 'keamanan-data',
       heading: '3. Keamanan Data & Kerahasiaan Finansial',
       paragraphs: [
-        'Divoom Store tidak pernah menyimpan nomor kartu kredit, nomor CVV, PIN, atau kredensial perbankan pelanggan di server kami. Semua data pembayaran ditransmisikan secara langsung dan terenkripsi melalui protokol SSL/TLS ke payment gateway Duitku yang bersertifikasi PCI-DSS.',
+        'Asri Collection tidak pernah menyimpan nomor kartu kredit, nomor CVV, PIN, atau kredensial perbankan pelanggan di server kami. Semua data pembayaran ditransmisikan secara langsung dan terenkripsi melalui protokol SSL/TLS ke payment gateway Duitku yang bersertifikasi PCI-DSS.',
         'Akses internal ke data pesanan dibatasi secara ketat dengan protokol autentikasi berbasis peran (Role-Based Access Control).'
       ],
       callout: {
@@ -136,7 +136,7 @@ export const privacyPolicyConfig: LegalDocumentConfig = {
       id: 'hak-pengguna',
       heading: '5. Hak Pelanggan atas Data',
       paragraphs: [
-        'Anda berhak meminta pembaruan, perbaikan, atau penghapusan data kontak pesanan dari riwayat transaksi kami dengan menghubungi tim dukungan resmi di support@divoom.com.'
+        'Anda berhak meminta pembaruan, perbaikan, atau penghapusan data kontak pesanan dari riwayat transaksi kami dengan menghubungi tim dukungan resmi di asricollections82@gmail.com.'
       ]
     }
   ],
@@ -160,7 +160,7 @@ export const shippingPolicyConfig: LegalDocumentConfig = {
       id: 'biaya-pengiriman',
       heading: '1. Ketentuan Tarif Ongkos Kirim',
       paragraphs: [
-        'Untuk mempermudah pengalaman berbelanja pelanggan di seluruh Indonesia, Divoom Store menerapkan tarif pengiriman flat (Flat Rate Shipping) yang terstandardisasi.',
+        'Untuk mempermudah pengalaman berbelanja pelanggan di seluruh Indonesia, Asri Collection menerapkan tarif pengiriman flat (Flat Rate Shipping) yang terstandardisasi.',
         'Biaya pengiriman flat ditetapkan sebesar Rp 52.000 per transaksi pesanan, terlepas dari jumlah item produk Divoom yang dipesan dalam satu keranjang belanja.'
       ],
       callout: {
@@ -228,7 +228,7 @@ export const paymentPolicyConfig: LegalDocumentConfig = {
       id: 'gateway-resmi',
       heading: '1. Integrasi Payment Gateway Duitku POP',
       paragraphs: [
-        'Divoom Store mengintegrasikan sistem pembayaran resmi Duitku POP (Payment Online Pop-up) yang berizin dan diawasi oleh Bank Indonesia.',
+        'Asri Collection mengintegrasikan sistem pembayaran resmi Duitku POP (Payment Online Pop-up) yang berizin dan diawasi oleh Bank Indonesia.',
         'Proses pembayaran dilakukan secara langsung di jendela interaktif (popup checkout) tanpa mengalihkan Anda ke situs eksternal yang tidak dikenal, menjamin keamanan transaksi yang lancar dan andal.'
       ]
     },
@@ -250,7 +250,7 @@ export const paymentPolicyConfig: LegalDocumentConfig = {
       heading: '3. Mekanisme Verifikasi Pembayaran Server-Authoritative',
       paragraphs: [
         'Keamanan transaksi pelanggan dilindungi dengan arsitektur Server-Authoritative. Pengalihan browser (redirect URL) bukan merupakan bukti sah pembayaran.',
-        'Pesanan hanya dinyatakan sah dan berstatus "Paid" setelah server Divoom Store menerima notifikasi callback HTTP POST terotentikasi dari server Duitku dengan signature kriptografi HMAC-SHA256 yang valid.'
+        'Pesanan hanya dinyatakan sah dan berstatus "Paid" setelah server Asri Collection menerima notifikasi callback HTTP POST terotentikasi dari server Duitku dengan signature kriptografi HMAC-SHA256 yang valid.'
       ],
       callout: {
         type: 'warning',
@@ -292,7 +292,7 @@ export const returnRefundPolicyConfig: LegalDocumentConfig = {
       id: 'syarat-pengembalian',
       heading: '1. Syarat Pengembalian Barang',
       paragraphs: [
-        'Kepuasan pelanggan adalah prioritas kami. Divoom Store menerima pengajuan pengembalian barang atau penukaran unit dalam kondisi berikut:'
+        'Kepuasan pelanggan adalah prioritas kami. Asri Collection menerima pengajuan pengembalian barang atau penukaran unit dalam kondisi berikut:'
       ],
       bullets: [
         'Produk mengalami cacat fungsi pabrik (manufacturing defect) saat pertama kali dinyalakan.',
@@ -322,14 +322,14 @@ export const returnRefundPolicyConfig: LegalDocumentConfig = {
       bullets: [
         'Setelah produk retur tiba di Service Center kami dan lolos inspeksi teknisi (maksimal 2 hari kerja).',
         'Pengembalian dana diproses ke rekening bank pelanggan atau saldo dompet digital asal transaksi dalam waktu 3 – 5 hari kerja kerja bank.',
-        'Biaya pengiriman barang retur dari pelanggan ke Service Center akan diganti oleh Divoom Store apabila terbukti merupakan cacat produksi atau kesalahan kirim.'
+        'Biaya pengiriman barang retur dari pelanggan ke Service Center akan diganti oleh Asri Collection apabila terbukti merupakan cacat produksi atau kesalahan kirim.'
       ]
     },
     {
       id: 'cara-pengajuan',
       heading: '4. Cara Mengajukan Retur',
       paragraphs: [
-        'Untuk memulai klaim pengembalian, silakan kirimkan email ke support@divoom.com dengan melampirkan Merchant Order ID, rekaman video unboxing, serta deskripsi kendala yang dialami. Tim Customer Care kami akan merespons dalam 1x24 jam.'
+        'Untuk memulai klaim pengembalian, silakan kirimkan email ke asricollections82@gmail.com dengan melampirkan Merchant Order ID, rekaman video unboxing, serta deskripsi kendala yang dialami. Tim Customer Care kami akan merespons dalam 1x24 jam.'
       ]
     }
   ],
@@ -364,7 +364,7 @@ export const cancellationPolicyConfig: LegalDocumentConfig = {
         'Apabila pembayaran telah terkonfirmasi lunas namun pesanan belum diserahkan ke jasa ekspedisi (status belum dipacking/dikirim):'
       ],
       bullets: [
-        'Pelanggan dapat mengajukan pembatalan darurat dengan segera menghubungi Customer Care di support@divoom.com dalam kurun waktu maksimal 2 jam setelah pembayaran.',
+        'Pelanggan dapat mengajukan pembatalan darurat dengan segera menghubungi Customer Care di asricollections82@gmail.com dalam kurun waktu maksimal 2 jam setelah pembayaran.',
         'Jika pesanan belum diproses cetak label pengiriman, pembatalan dapat disetujui dan pengembalian dana diproses sesuai Kebijakan Refund.'
       ]
     },
@@ -377,14 +377,14 @@ export const cancellationPolicyConfig: LegalDocumentConfig = {
       ],
       callout: {
         type: 'warning',
-        text: 'Penolakan Paket di Tempat (COD): Divoom Store menerapkan sistem pembayaran digital penuh (non-COD). Menolak paket yang sah dari kurir tanpa alasan cacat fisik dapat mengakibatkan pembatasan akun pelanggan di masa mendatang.'
+        text: 'Penolakan Paket di Tempat (COD): Asri Collection menerapkan sistem pembayaran digital penuh (non-COD). Menolak paket yang sah dari kurir tanpa alasan cacat fisik dapat mengakibatkan pembatasan akun pelanggan di masa mendatang.'
       }
     },
     {
       id: 'pembatalan-oleh-sistem',
-      heading: '4. Pembatalan Sepihak oleh Pihak Divoom Store',
+      heading: '4. Pembatalan Sepihak oleh Pihak Asri Collection',
       paragraphs: [
-        'Divoom Store berhak membatalkan pesanan secara sepihak dalam kondisi force majeure, ketidaksesuaian data verifikasi fraud detection, atau ketidaktersediaan stok mendadak. Dalam kondisi ini, dana pelanggan akan dikembalikan secara penuh 100% tanpa potongan.'
+        'Asri Collection berhak membatalkan pesanan secara sepihak dalam kondisi force majeure, ketidaksesuaian data verifikasi fraud detection, atau ketidaktersediaan stok mendadak. Dalam kondisi ini, dana pelanggan akan dikembalikan secara penuh 100% tanpa potongan.'
       ]
     }
   ],
@@ -408,7 +408,7 @@ export const warrantyPolicyConfig: LegalDocumentConfig = {
       id: 'cakupan-garansi',
       heading: '1. Masa Berlaku & Cakupan Garansi',
       paragraphs: [
-        'Seluruh unit hardware original Divoom (Ditoo-Pro, Pixoo-64, Planet-9, Pixel Backpack-S2) yang dibeli melalui Divoom Store dilindungi oleh Garansi Resmi Terbatas selama 12 (dua belas) bulan sejak tanggal invoice transaksi.'
+        'Seluruh unit hardware original Divoom (Ditoo-Pro, Pixoo-64, Planet-9, Pixel Backpack-S2) yang dibeli melalui Asri Collection dilindungi oleh Garansi Resmi Terbatas selama 12 (dua belas) bulan sejak tanggal invoice transaksi.'
       ],
       bullets: [
         'Garansi mencakup kerusakan modul audio speaker, driver DSP, panel layar LED Pixel, modul Bluetooth/WiFi, dan baterai lithium bawaan akibat cacat perakitan pabrik.',
@@ -436,8 +436,8 @@ export const warrantyPolicyConfig: LegalDocumentConfig = {
         'Langkah-langkah untuk melakukan klaim garansi hardware Divoom:'
       ],
       bullets: [
-        '1. Siapkan bukti invoice digital Divoom Store dan foto/video yang menunjukkan kendala perangkat.',
-        '2. Hubungi tim teknis via email support@divoom.com untuk mendapatkan instruksi troubleshooting mandiri.',
+        '1. Siapkan bukti invoice digital Asri Collection dan foto/video yang menunjukkan kendala perangkat.',
+        '2. Hubungi tim teknis via email asricollections82@gmail.com untuk mendapatkan instruksi troubleshooting mandiri.',
         '3. Jika kendala menetap, Anda akan menerima nomor RMA (Return Merchandise Authorization) dan alamat Service Center resmi.',
         '4. Kirimkan unit perangkat beserta kotak dan kartu garansi ke Service Center.',
         '5. Tim teknisi akan memeriksa dan menyelesaikan servis/penggantian unit dalam waktu 3 – 7 hari kerja.'
@@ -462,7 +462,7 @@ export const faqConfig: LegalDocumentConfig = {
   sections: [
     {
       id: 'panduan-faq',
-      heading: 'Pusat Jawaban Cepat Divoom Store',
+      heading: 'Pusat Jawaban Cepat Asri Collection',
       paragraphs: [
         'Temukan jawaban atas pertanyaan yang paling sering diajukan oleh pelanggan kami di bawah ini. Jika pertanyaan Anda belum terjawab, jangan ragu untuk menghubungi tim dukungan kami.'
       ]
@@ -472,17 +472,17 @@ export const faqConfig: LegalDocumentConfig = {
     {
       category: 'Umum',
       question: 'Apakah produk Divoom yang dijual di sini 100% original dan bergaransi?',
-      answer: 'Ya, seluruh produk yang dipajang di Divoom Store merupakan produk original Divoom bergaransi resmi 12 bulan dengan dukungan purnajual dan layanan pelanggan resmi di Indonesia.'
+      answer: 'Ya, seluruh produk yang dipajang di Asri Collection merupakan produk original Divoom bergaransi resmi 12 bulan dengan dukungan purnajual dan layanan pelanggan resmi di Indonesia.'
     },
     {
       category: 'Umum',
       question: 'Apakah saya perlu mendaftar akun untuk membeli produk Divoom?',
-      answer: 'Tidak perlu. Divoom Store mengutamakan kenyamanan pelanggan melalui sistem Guest Checkout. Anda cukup memasukkan nama penerima, alamat pengiriman, dan email untuk konfirmasi invoice.'
+      answer: 'Tidak perlu. Asri Collection mengutamakan kenyamanan pelanggan melalui sistem Guest Checkout. Anda cukup memasukkan nama penerima, alamat pengiriman, dan email untuk konfirmasi invoice.'
     },
     {
       category: 'Pesanan & Pengiriman',
       question: 'Berapa biaya pengiriman pesanan saya?',
-      answer: 'Divoom Store menerapkan tarif pengiriman flat sebesar Rp 52.000 ke seluruh wilayah jangkauan pengiriman di Indonesia, sudah termasuk proteksi kemasan bubble wrap berlapis tebal untuk keamanan perangkat elektronik Anda.'
+      answer: 'Asri Collection menerapkan tarif pengiriman flat sebesar Rp 52.000 ke seluruh wilayah jangkauan pengiriman di Indonesia, sudah termasuk proteksi kemasan bubble wrap berlapis tebal untuk keamanan perangkat elektronik Anda.'
     },
     {
       category: 'Pesanan & Pengiriman',
@@ -507,7 +507,7 @@ export const faqConfig: LegalDocumentConfig = {
     {
       category: 'Produk & Garansi',
       question: 'Berapa lama masa garansi produk Divoom dan bagaimana cara klaimnya?',
-      answer: 'Masa garansi resmi hardware adalah 12 bulan sejak tanggal pembelian. Untuk klaim garansi, cukup kirimkan nomor invoice dan rekaman kendala ke support@divoom.com untuk mendapatkan nomor tiket RMA.'
+      answer: 'Masa garansi resmi hardware adalah 12 bulan sejak tanggal pembelian. Untuk klaim garansi, cukup kirimkan nomor invoice dan rekaman kendala ke asricollections82@gmail.com untuk mendapatkan nomor tiket RMA.'
     },
     {
       category: 'Pengembalian',
@@ -525,7 +525,7 @@ export const faqConfig: LegalDocumentConfig = {
 export const contactUsConfig: LegalDocumentConfig = {
   slug: '/contact-us',
   title: 'Hubungi Kami',
-  subtitle: 'Tim dukungan pelanggan Divoom Store siap membantu Anda seputar konsultasi produk, kendala pembayaran, dan status pesanan.',
+  subtitle: 'Tim dukungan pelanggan Asri Collection siap membantu Anda seputar konsultasi produk, kendala pembayaran, dan status pesanan.',
   badge: 'Customer Support',
   effectiveDate: '01 Januari 2026',
   lastUpdated: '06 November 2026',
@@ -533,7 +533,7 @@ export const contactUsConfig: LegalDocumentConfig = {
   sections: [
     {
       id: 'saluran-resmi',
-      heading: 'Layanan Bantuan Resmi Divoom Store',
+      heading: 'Layanan Bantuan Resmi Asri Collection',
       paragraphs: [
         'Kami berdedikasi memberikan pengalaman terbaik bagi seluruh pengguna dan penggemar pixel art Divoom. Silakan hubungi saluran resmi kami di bawah ini untuk mendapatkan bantuan yang cepat dan tepat sasaran.'
       ]
@@ -551,23 +551,24 @@ export const contactUsConfig: LegalDocumentConfig = {
   ],
   contactChannels: [
     {
-      name: 'Email Dukungan Resmi',
-      value: 'support@divoom.com',
-      description: 'Pertanyaan seputar pesanan, invoice Duitku, klaim garansi hardware, dan kerjasama bisnis.',
-      actionUrl: 'mailto:support@divoom.com',
-      badge: 'Email Utama'
+      name: 'Telepon / WhatsApp',
+      value: '+6281234336327',
+      description: 'Hubungi Asri Collection untuk pertanyaan produk, pesanan, dan layanan pelanggan.',
+      actionUrl: 'tel:+6281234336327',
+      badge: 'Telepon'
     },
     {
-      name: 'Pusat Garansi & Service Center',
-      value: 'Divoom Authorized Service Support',
-      description: 'Layanan inspeksi teknis unit, penggantian suku cadang orisinal, dan klaim RMA garansi 12 bulan.',
-      badge: 'Garansi Resmi'
+      name: 'Email',
+      value: 'asricollections82@gmail.com',
+      description: 'Kirim pertanyaan seputar pesanan, pembayaran, dan layanan pelanggan.',
+      actionUrl: 'mailto:asricollections82@gmail.com',
+      badge: 'Email'
     },
     {
-      name: 'Spesifikasi Integrasi & API',
-      value: 'Supabase Edge Functions & Duitku POP Gateway',
-      description: 'Status sistem backend transaksi beroperasi dengan enkripsi HMAC dan TLS berkeamanan tinggi.',
-      badge: 'Sistem Terverifikasi'
+      name: 'Alamat',
+      value: 'Sidenreng Rappang, Sulawesi Selatan',
+      description: 'Lokasi Asri Collection.',
+      badge: 'Lokasi'
     }
   ],
   relatedLinks: [
@@ -579,38 +580,37 @@ export const contactUsConfig: LegalDocumentConfig = {
 
 export const aboutUsConfig: LegalDocumentConfig = {
   slug: '/about-us',
-  title: 'Tentang Divoom Store',
-  subtitle: 'Pelopor inovasi perangkat audio retro, layar LED pixel art interaktif, dan aksesoris estetika modern.',
-  badge: 'Profil Brand',
+  title: 'Tentang Asri Collection',
+  subtitle: 'Toko online yang berlokasi di Sidenreng Rappang, Sulawesi Selatan.',
+  badge: 'Profil Toko',
   effectiveDate: '01 Januari 2026',
-  lastUpdated: '06 November 2026',
-  version: '1.5.0',
+  lastUpdated: '07 November 2026',
+  version: '1.0.0',
   sections: [
     {
-      id: 'cerita-brand',
-      heading: 'Mengenal Divoom',
+      id: 'profil-toko',
+      heading: 'Mengenal Asri Collection',
       paragraphs: [
-        'Divoom adalah merek pionir global yang menggabungkan kecintaan terhadap seni retro pixel art dengan teknologi audio modern mutakhir. Sejak awal berdirinya, Divoom terus berinovasi merancang gadget yang tidak hanya memiliki kualitas suara premium, tetapi juga membawa kegembiraan visual ke dalam kehidupan sehari-hari.',
-        'Dari seri speaker mechanical keyboard legendaris Ditoo-Pro hingga display bingkai cerdas Pixoo-64 dan backpack berlayar LED, setiap produk Divoom dirancang untuk menginspirasi kreativitas pengguna melalui aplikasi komunitas pixel art nomor satu di dunia.'
+        'Asri Collection merupakan toko online yang berlokasi di Sidenreng Rappang, Sulawesi Selatan.',
+        'Kami menyediakan pengalaman belanja online dengan informasi produk, proses pemesanan, dan pembayaran digital melalui Duitku POP.'
       ]
     },
     {
       id: 'komitmen-kami',
-      heading: 'Komitmen Kualitas & Pelayanan Kami',
+      heading: 'Komitmen Pelayanan',
       paragraphs: [
-        'Divoom Store hadir untuk memastikan para penggemar pixel art di Indonesia dapat memperoleh produk orisinal dengan jaminan purnajual terpercaya:'
+        'Asri Collection berupaya memberikan informasi yang jelas dan membantu pelanggan selama proses belanja.'
       ],
       bullets: [
-        '100% Produk Original dengan garansi resmi 12 bulan.',
-        'Sistem belanja aman tanpa ribet dengan Guest Checkout dan Duitku POP payment gateway.',
-        'Pengemasan terstandar dan aman dengan tarif flat Rp 52.000 ke seluruh Indonesia.',
-        'Dukungan komunitas kreator lokal dan internasional melalui aplikasi mobile Divoom.'
+        'Pemesanan praktis melalui Guest Checkout.',
+        'Pembayaran digital melalui Duitku POP.',
+        'Layanan pelanggan melalui telepon dan email resmi toko.'
       ]
     }
   ],
   relatedLinks: [
     { title: 'Hubungi Kami', route: '/contact-us' },
     { title: 'Katalog Produk', route: '/products' },
-    { title: 'Kebijakan Garansi', route: '/warranty-policy' }
+    { title: 'Kebijakan Pengiriman', route: '/shipping-policy' }
   ]
 };
