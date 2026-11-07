@@ -75,7 +75,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const eventHash = await sha256Hex(rawBody);
-    const { data, error } = await supabase.rpc("divoom_apply_payment_callback", {
+    const { error } = await supabase.rpc("divoom_apply_payment_callback", {
       p_event_hash: eventHash,
       p_merchant_order_id: merchantOrderId,
       p_amount: amount,
