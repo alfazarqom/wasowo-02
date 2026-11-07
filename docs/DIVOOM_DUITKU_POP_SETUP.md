@@ -33,6 +33,7 @@ The Edge Functions use service-role access internally. They must be deployed wit
 - Callback signature: HMAC-SHA256 of `merchantCode + amount + merchantOrderId` using the merchant API key.
 - Only callback `resultCode=00` marks the order paid; `01` marks it failed. Other result codes are rejected without changing payment state.
 - Create Invoice requires an `Idempotency-Key` header. The key and normalized checkout fingerprint are stored on the new `divoom_orders` records; retries with the same key reuse the saved invoice or return an in-progress response instead of creating another order.
+- If the Duitku request outcome is ambiguous (for example, a network timeout after the request was sent), the transaction is marked `invoice_unknown`; automatic retry with a new key is blocked to avoid accidentally creating a second payable invoice. Reconcile with Duitku before starting another attempt.
 - The browser loads the Duitku JS library ahead of time, but `checkout.process()` is invoked only by an explicit user click. Popup events and the return URL are not payment proof; the UI reads status from the server.
 - POP documentation does not specify a fixed callback acknowledgment body; this implementation responds `200 OK` after verified processing.
 
