@@ -71,7 +71,7 @@ async function getOrderStatus(req: Request): Promise<Response> {
 
   const { data, error } = await supabase
     .from("divoom_orders")
-    .select("merchant_order_id, customer_email, subtotal, shipping_cost, total_amount, order_status, created_at, divoom_payment_transactions(status, duitku_reference, payment_method, paid_at)")
+    .select("id, merchant_order_id, customer_email, subtotal, shipping_cost, total_amount, order_status, created_at")
     .eq("merchant_order_id", merchantOrderId)
     .maybeSingle();
 
@@ -83,9 +83,15 @@ async function getOrderStatus(req: Request): Promise<Response> {
     return json({ success: false, error: "Order not found." }, 404);
   }
 
-  const payment = Array.isArray(data.divoom_payment_transactions)
-    ? data.divoom_payment_transactions[0]
-    : data.divoom_payment_transactions;
+  const { data: payment, error: paymentError } = await supabase
+    .from("divoom_payment_transactions")
+    .select("status, duitku_reference, payment_method, paid_at")
+    .eq("order_id", data.id)
+    .maybeSingle();
+  if (paymentError) {
+    console.error("Payment status lookup failed:", paymentError.message);
+    return json({ success: false, error: "Unable to retrieve payment status." }, 500);
+  }
 
   return json({
     success: true,
@@ -127,6 +133,13 @@ Deno.serve(async (req: Request) => {
       return json({ success: false, error: "Checkout rate limit reached. Try again shortly." }, 429);
     }
 
+    const merchantCode = requiredEnv("DUITKU_MERCHANT_CODE");
+    const apiKey = requiredEnv("DUITKU_API_KEY");
+    const environment = requiredEnv("DUITKU_ENV").toLowerCase();
+    if (environment !== "sandbox" && environment !== "production") {
+      return json({ success: false, error: "DUITKU_ENV must be sandbox or production." }, 500);
+    }
+    const returnUrl = requiredEnv("STOREFRONT_RETURN_URL");
     const requested = new Map<string, number>();
     for (const item of payload.items) {
       const productId = normalizeCustomer(item?.productId, 200);
@@ -227,13 +240,6 @@ Deno.serve(async (req: Request) => {
       return json({ success: false, error: "Unable to initialize payment." }, 500);
     }
 
-    const merchantCode = requiredEnv("DUITKU_MERCHANT_CODE");
-    const apiKey = requiredEnv("DUITKU_API_KEY");
-    const environment = requiredEnv("DUITKU_ENV").toLowerCase();
-    if (environment !== "sandbox" && environment !== "production") {
-      return json({ success: false, error: "DUITKU_ENV must be sandbox or production." }, 500);
-    }
-    const returnUrl = requiredEnv("STOREFRONT_RETURN_URL");
     const timestamp = String(Date.now());
     const signature = await hmacSha256Hex(merchantCode + timestamp, apiKey);
     const endpoint = environment === "production"
@@ -253,20 +259,6 @@ Deno.serve(async (req: Request) => {
         price: item.unit_price,
         quantity: item.quantity,
       })).concat([{ name: "Shipping", price: shippingCost, quantity: 1 }]),
-      customerDetail: {
-        firstName: customerName.firstName,
-        lastName: customerName.lastName,
-        email,
-        phoneNumber: phone || "",
-        billingAddress: {
-          firstName: customerName.firstName, lastName: customerName.lastName,
-          address, city: city || "-", postalCode: "00000", phone: phone || "", countryCode: "ID",
-        },
-        shippingAddress: {
-          firstName: customerName.firstName, lastName: customerName.lastName,
-          address, city: city || "-", postalCode: "00000", phone: phone || "", countryCode: "ID",
-        },
-      },
       callbackUrl: `${supabaseUrl}/functions/v1/divoom-duitku-callback`,
       returnUrl,
     };
