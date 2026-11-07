@@ -1,0 +1,10 @@
+# Keep the public storefront and Duitku callback endpoints aligned with
+# the currently deployed Supabase function authentication settings.
+[functions."get-divoom-products"]
+verify_jwt = false
+
+[functions."divoom-duitku-create-invoice"]
+verify_jwt = false
+
+[functions."divoom-duitku-callback"]
+verify_jwt = false
