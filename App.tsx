@@ -1580,7 +1580,8 @@ function CheckoutPage() {
       localStorage.setItem('divoom_pending_payment', JSON.stringify({
         merchantOrderId: payload.data.merchantOrderId,
         reference: payload.data.reference,
-        email: formData.email.trim().toLowerCase()
+        email: formData.email.trim().toLowerCase(),
+        environment: payload.data.paymentScriptEnvironment
       }));
       clearCart();
       navigate('payment', payload.data.merchantOrderId);
@@ -1744,8 +1745,7 @@ function PaymentPage() {
         if (!cancelled) {
           setPaymentStatus(status);
           if (status === 'paid') {
-            setMessage('Payment confirmed by server.');
-            navigate('order-success', merchantOrderId);
+            setMessage('Payment confirmed by server. You can now view your order confirmation.');
           } else if (status === 'failed' || status === 'expired') {
             setMessage('Payment was not completed. Your order remains available for review.');
           } else {
@@ -1757,7 +1757,9 @@ function PaymentPage() {
       }
     };
 
-    const scriptUrl = 'https://app-sandbox.duitku.com/lib/js/duitku.js';
+    const scriptUrl = pending.environment === 'production'
+      ? 'https://app-prod.duitku.com/lib/js/duitku.js'
+      : 'https://app-sandbox.duitku.com/lib/js/duitku.js';
     const existingScript = document.querySelector('script[data-divoom-duitku="true"]') as HTMLScriptElement | null;
     const launch = () => {
       const duitkuWindow = window as Window & { checkout?: { process: (reference: string, options: Record<string, unknown>) => void } };
@@ -1791,7 +1793,7 @@ function PaymentPage() {
     const interval = window.setInterval(() => { void checkStatus(); }, 5000);
     void checkStatus();
     return () => { cancelled = true; window.clearInterval(interval); };
-  }, [routeParam, navigate]);
+  }, [routeParam]);
 
   const reopenPopup = () => {
     const stored = localStorage.getItem('divoom_pending_payment');
@@ -1813,9 +1815,14 @@ function PaymentPage() {
       <h1 className="text-2xl font-bold text-white">Duitku Secure Payment</h1>
       <p className="text-sm text-neutral-300">{message}</p>
       {paymentStatus && <p className="text-xs text-neutral-400">Server payment status: {paymentStatus}</p>}
-      <button onClick={reopenPopup} className="bg-pink-600 hover:bg-pink-500 text-white font-semibold text-sm px-6 py-3 rounded-lg">
-        Open Payment Window
-      </button>
+      <div className="flex flex-wrap justify-center gap-3">
+        <button onClick={reopenPopup} className="bg-pink-600 hover:bg-pink-500 text-white font-semibold text-sm px-6 py-3 rounded-lg">
+          Open Payment Window
+        </button>
+        {paymentStatus === 'paid' && <button onClick={() => navigate('order-success', routeParam)} className="bg-neutral-700 hover:bg-neutral-600 text-white font-semibold text-sm px-6 py-3 rounded-lg">
+          View Order Confirmation
+        </button>}
+      </div>
       <p className="text-xs text-neutral-500">Payment is confirmed only after the verified server callback updates your order.</p>
     </div>
   );
