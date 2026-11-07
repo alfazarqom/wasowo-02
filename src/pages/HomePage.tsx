@@ -5,7 +5,7 @@ import { ProductCard } from '../components/common/ProductCard';
 import { LoadingGrid } from '../components/common/LoadingGrid';
 
 export function HomePage() {
-  const { productGroups, loading } = useApp();
+  const { productGroups, loading, error } = useApp();
 
   return (
     <div className="space-y-12">
@@ -61,6 +61,10 @@ export function HomePage() {
 
         {loading ? (
           <LoadingGrid />
+        ) : error ? (
+          <div role="alert" className="rounded-xl border border-red-900/60 bg-red-950/20 p-6 text-center text-sm text-red-300">
+            Product catalog is temporarily unavailable. Please try again later.
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {productGroups.slice(0, 4).map((group) => (
