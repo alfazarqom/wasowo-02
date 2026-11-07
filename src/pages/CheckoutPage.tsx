@@ -39,6 +39,17 @@ export function CheckoutPage() {
         })
       });
       const payload = await response.json();
+      if (payload?.invoiceOutcome === 'unknown' && payload?.merchantOrderId) {
+        localStorage.setItem('divoom_pending_payment', JSON.stringify({
+          merchantOrderId: payload.merchantOrderId,
+          reference: null,
+          email: formData.email.trim().toLowerCase(),
+          environment: 'sandbox'
+        }));
+        clearCart();
+        navigate(`/payment/${payload.merchantOrderId}`);
+        return;
+      }
       if (!response.ok || !payload?.success || !payload?.data?.reference || !payload?.data?.merchantOrderId) {
         throw new Error(payload?.error || 'Unable to create payment invoice.');
       }
