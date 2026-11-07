@@ -26,12 +26,14 @@ export function PaymentPage() {
       setPopupReady(false);
       return;
     }
+    const customerEmail = pending.email;
+    const paymentReference = pending.reference;
 
     const checkStatus = async () => {
       try {
         const url = new URL(EDGE_FUNCTIONS.duitkuCheckout);
         url.searchParams.set('merchantOrderId', merchantOrderId);
-        url.searchParams.set('email', pending.email);
+        url.searchParams.set('email', customerEmail);
         const response = await fetch(url.toString());
         const payload = await response.json();
         if (!response.ok || !payload?.success) throw new Error(payload?.error || 'Unable to check payment status.');
@@ -42,7 +44,7 @@ export function PaymentPage() {
             setMessage('Payment confirmed by server. You can now view your order confirmation.');
           } else if (status === 'failed' || status === 'expired' || status === 'invoice_failed') {
             setMessage('Payment was not completed. Your order remains available for review.');
-          } else if (!pending.reference) {
+          } else if (!paymentReference) {
             setMessage('Invoice creation is being reconciled. Do not submit checkout again; contact support if this status does not change.');
           } else {
             setMessage('Waiting for payment confirmation from Duitku…');
