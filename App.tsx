@@ -1496,6 +1496,34 @@ function OrdersPage() {
 // --- 11. ORDER DETAIL PAGE ---
 function OrderDetailPage() {
   const { routeParam } = useApp();
+  const [order, setOrder] = useState<any>(null);
+  const [message, setMessage] = useState('Loading order from the server…');
+
+  useEffect(() => {
+    let cancelled = false;
+    const stored = localStorage.getItem('divoom_pending_payment');
+    const pending = stored ? JSON.parse(stored) : null;
+    if (!routeParam || !pending?.email || pending.merchantOrderId !== routeParam) {
+      setMessage('Order lookup details are not available in this guest browser session.');
+      return;
+    }
+    const url = new URL('https://mvwflakurihhakdrlteg.supabase.co/functions/v1/divoom-duitku-create-invoice');
+    url.searchParams.set('merchantOrderId', routeParam);
+    url.searchParams.set('email', pending.email);
+    fetch(url.toString())
+      .then(async (response) => {
+        const payload = await response.json();
+        if (!response.ok || !payload?.success) throw new Error(payload?.error || 'Order not found.');
+        if (!cancelled) {
+          setOrder(payload.data);
+          setMessage('Order loaded from Supabase.');
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) setMessage(error instanceof Error ? error.message : 'Unable to load order.');
+      });
+    return () => { cancelled = true; };
+  }, [routeParam]);
 
   return (
     <div className="max-w-xl mx-auto space-y-6">
@@ -1503,11 +1531,16 @@ function OrderDetailPage() {
       <div className="bg-neutral-800/80 border border-neutral-700 rounded-xl p-6 space-y-4">
         <div className="flex justify-between border-b border-neutral-700 pb-3 text-xs">
           <span className="text-neutral-400">Order Ref:</span>
-          <span className="font-mono text-white font-bold">{routeParam || 'DIV-DEMO-9982'}</span>
+          <span className="font-mono text-white font-bold">{routeParam || '—'}</span>
         </div>
-        <p className="text-xs text-neutral-400 leading-relaxed">
-          This order detail view represents client-side demonstration state. No live database record is claimed to exist without server backend confirmation.
-        </p>
+        <p className="text-xs text-neutral-400">{message}</p>
+        {order && <>
+          <div className="flex justify-between text-sm"><span className="text-neutral-400">Subtotal</span><span>{formatIDR(order.subtotal)}</span></div>
+          <div className="flex justify-between text-sm"><span className="text-neutral-400">Shipping</span><span>{formatIDR(order.shippingCost)}</span></div>
+          <div className="flex justify-between border-t border-neutral-700 pt-3 font-bold"><span>Total</span><span className="text-pink-400">{formatIDR(order.totalAmount)}</span></div>
+          <div className="flex justify-between text-sm"><span className="text-neutral-400">Order status</span><span>{order.orderStatus}</span></div>
+          <div className="flex justify-between text-sm"><span className="text-neutral-400">Payment status</span><span>{order.paymentStatus}</span></div>
+        </>}
       </div>
     </div>
   );
