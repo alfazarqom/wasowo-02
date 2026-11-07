@@ -9,17 +9,24 @@ export function PaymentReturnPage() {
   useEffect(() => {
     let cancelled = false;
     const merchantOrderId = searchParams.get('merchantOrderId') || '';
-    const stored = localStorage.getItem('divoom_pending_payment');
-    const pending = stored ? JSON.parse(stored) : null;
+    const pending: { merchantOrderId?: string; email?: string } | null = (() => {
+      try {
+        const stored = localStorage.getItem('divoom_pending_payment');
+        return stored ? JSON.parse(stored) : null;
+      } catch {
+        return null;
+      }
+    })();
     if (!merchantOrderId || !pending?.email || pending.merchantOrderId !== merchantOrderId) {
       setStatus('Order reference is unavailable. Please use Order Lookup or contact support.');
       return;
     }
+    const customerEmail = pending.email;
     const check = async () => {
       try {
         const url = new URL(EDGE_FUNCTIONS.duitkuCheckout);
         url.searchParams.set('merchantOrderId', merchantOrderId);
-        url.searchParams.set('email', pending.email);
+        url.searchParams.set('email', customerEmail);
         const response = await fetch(url.toString());
         const payload = await response.json();
         if (!response.ok || !payload?.success) throw new Error();
