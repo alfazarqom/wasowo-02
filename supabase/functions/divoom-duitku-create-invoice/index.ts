@@ -372,10 +372,12 @@ Deno.serve(async (req: Request) => {
       providerData = await duitkuResponse.json();
     } catch (error) {
       console.error("Duitku invoice request failed:", error instanceof Error ? error.message : "network error");
+      // The provider may have created the invoice even if its response was lost.
+      // Keep this attempt blocked from automatic retries to avoid duplicate payable invoices.
       await supabase.from("divoom_payment_transactions")
-        .update({ status: "invoice_failed", provider_status_message: "Provider request failed", updated_at: new Date().toISOString() })
+        .update({ status: "invoice_unknown", provider_status_message: "Provider outcome unknown; manual reconciliation required", updated_at: new Date().toISOString() })
         .eq("merchant_order_id", merchantOrderId);
-      return json({ success: false, error: "Payment provider is temporarily unavailable.", merchantOrderId }, 502);
+      return json({ success: false, error: "Payment provider outcome is uncertain. Do not start another checkout; contact support with the order ID.", merchantOrderId }, 502);
     }
 
     const statusCode = String(providerData.statusCode ?? "");
