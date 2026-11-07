@@ -526,7 +526,7 @@ function StandaloneLayout() {
       <main className="flex-1 w-full max-w-4xl mx-auto px-4 py-8">
         <PageRouter />
       </main>
-      <Footer isMinimal />
+      <Footer />
     </div>
   );
 }
@@ -712,60 +712,68 @@ function BottomActionBar() {
   );
 }
 
-function Footer({ isMinimal = false }: { isMinimal?: boolean }) {
+function Footer() {
   const { navigate } = useApp();
 
-  if (isMinimal) {
-    return (
-      <footer className="bg-neutral-900 border-t border-neutral-800 py-6 text-center text-xs text-neutral-500">
-        &copy; {new Date().getFullYear()} Divoom Storefront. All rights reserved. Guest Mode Active.
-      </footer>
-    );
-  }
+  const linkClass = "text-left text-xs text-neutral-400 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500 rounded transition-colors";
+
+  const groups = [
+    {
+      title: "Informasi",
+      links: [
+        { label: "Tentang Kami", route: "about-us" },
+        { label: "Hubungi Kami", route: "contact" },
+        { label: "FAQ", route: "faq" }
+      ]
+    },
+    {
+      title: "Bantuan Pelanggan",
+      links: [
+        { label: "Syarat dan Ketentuan", route: "terms-and-conditions" },
+        { label: "Kebijakan Privasi", route: "privacy-policy" },
+        { label: "Kebijakan Pengiriman", route: "shipping-policy" },
+        { label: "Kebijakan Pengembalian dan Penukaran", route: "return-exchange-policy" },
+        { label: "Kebijakan Pengembalian Dana", route: "refund-policy" },
+        { label: "Kebijakan Pembatalan", route: "cancellation-policy" }
+      ]
+    },
+    {
+      title: "Transaksi",
+      links: [
+        { label: "Checkout", route: "checkout" },
+        { label: "Status Pesanan", route: "order-status" }
+      ]
+    }
+  ];
 
   return (
-    <footer className="bg-neutral-950 border-t border-neutral-800 text-neutral-400 text-sm mt-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 md:grid-cols-4 gap-8">
+    <footer className="bg-neutral-950 border-t border-neutral-800 text-neutral-400 mt-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         <div>
           <h3 className="text-white font-bold tracking-wider text-base mb-3">DIVOOM STORE</h3>
           <p className="text-xs text-neutral-400 leading-relaxed">
-            Leading innovations in pixel art gadgetry, Bluetooth retro speakers, LED displays, and custom aesthetic accessories.
+            Discover pixel art gadgets, Bluetooth speakers, LED displays, and creative accessories.
           </p>
         </div>
 
-        <div>
-          <h4 className="text-white font-semibold text-xs uppercase tracking-wider mb-3">Quick Links</h4>
-          <ul className="space-y-2 text-xs">
-            <li><button onClick={() => navigate('home')} className="hover:text-white transition-colors">Home</button></li>
-            <li><button onClick={() => navigate('products')} className="hover:text-white transition-colors">All Products</button></li>
-            <li><button onClick={() => navigate('categories')} className="hover:text-white transition-colors">Categories</button></li>
-            <li><button onClick={() => navigate('wishlist')} className="hover:text-white transition-colors">Wishlist</button></li>
-          </ul>
-        </div>
-
-        <div>
-          <h4 className="text-white font-semibold text-xs uppercase tracking-wider mb-3">Customer Care</h4>
-          <ul className="space-y-2 text-xs">
-            <li><button onClick={() => navigate('orders')} className="hover:text-white transition-colors">Order Lookup</button></li>
-            <li><button onClick={() => navigate('order-tracking')} className="hover:text-white transition-colors">Shipping & Tracking</button></li>
-            <li><button onClick={() => navigate('contact')} className="hover:text-white transition-colors">Contact Support</button></li>
-          </ul>
-        </div>
-
-        <div>
-          <h4 className="text-white font-semibold text-xs uppercase tracking-wider mb-3">Backend Status</h4>
-          <p className="text-xs text-neutral-400 leading-relaxed mb-2">
-            Connected to Supabase Edge Function API <code className="text-pink-400 font-mono text-[10px]">get-divoom-products</code>.
-          </p>
-          <div className="inline-flex items-center gap-2 bg-neutral-900 border border-neutral-800 rounded px-2.5 py-1 text-[11px] text-neutral-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            Guest Checkout Ready
-          </div>
-        </div>
+        {groups.map((group) => (
+          <nav key={group.title} aria-label={group.title}>
+            <h4 className="text-white font-semibold text-xs uppercase tracking-wider mb-3">{group.title}</h4>
+            <ul className="space-y-2">
+              {group.links.map((link) => (
+                <li key={link.route}>
+                  <button type="button" onClick={() => navigate(link.route)} className={linkClass}>
+                    {link.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))}
       </div>
 
       <div className="border-t border-neutral-900 py-4 px-4 text-center text-xs text-neutral-500">
-        &copy; {new Date().getFullYear()} Divoom Storefront application. Built for performance and pixel accuracy.
+        &copy; {new Date().getFullYear()} Divoom Storefront. All rights reserved.
       </div>
     </footer>
   );
@@ -793,6 +801,15 @@ function PageRouter() {
     case 'order-tracking': return <OrderTrackingPage />;
     case 'checkout': return <CheckoutPage />;
     case 'contact': return <ContactPage />;
+    case 'about-us': return <AboutUsPage />;
+    case 'faq': return <FAQPage />;
+    case 'terms-and-conditions': return <TermsAndConditionsPage />;
+    case 'privacy-policy': return <PrivacyPolicyPage />;
+    case 'shipping-policy': return <ShippingPolicyPage />;
+    case 'return-exchange-policy': return <ReturnExchangePolicyPage />;
+    case 'refund-policy': return <RefundPolicyPage />;
+    case 'cancellation-policy': return <CancellationPolicyPage />;
+    case 'order-status': return <OrderStatusPage />;
     case 'payment': return <PaymentPage />;
     case 'payment-return': return <PaymentReturnPage />;
     case 'order-success': return <OrderSuccessPage />;
@@ -1668,6 +1685,151 @@ function ContactPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// --- CUSTOMER INFORMATION PAGES ---
+
+function AboutUsPage() {
+  return (
+    <section className="max-w-3xl mx-auto space-y-5">
+      <h1 className="text-2xl font-bold text-white">Tentang Kami</h1>
+      <div className="bg-neutral-800/60 border border-neutral-700 rounded-xl p-6 space-y-3 text-sm text-neutral-300 leading-relaxed">
+        <p>Selamat datang di Divoom Storefront, katalog online untuk menjelajahi produk dan perangkat kreatif Divoom.</p>
+        <p>Halaman ini memperkenalkan pengalaman katalog dan belanja pada situs. Informasi mengenai badan usaha, status distributor resmi, alamat operasional, dan identitas penjual perlu dilengkapi berdasarkan data bisnis yang telah diverifikasi.</p>
+      </div>
+    </section>
+  );
+}
+
+function FAQPage() {
+  const faqs = [
+    {
+      question: "Apakah saya harus membuat akun untuk berbelanja?",
+      answer: "Storefront ini menyediakan alur guest checkout. Ketersediaan pemrosesan pesanan sungguhan tetap bergantung pada integrasi backend."
+    },
+    {
+      question: "Bagaimana cara melihat status pesanan?",
+      answer: "Gunakan halaman Status Pesanan. Saat ini pencarian pesanan belum terhubung ke backend, sehingga situs belum dapat menampilkan status pesanan aktual."
+    },
+    {
+      question: "Apakah status pembayaran sama dengan status pengiriman?",
+      answer: "Tidak. Status pembayaran dan status pengiriman merupakan informasi yang berbeda dan harus bersumber dari sistem masing-masing."
+    },
+    {
+      question: "Bagaimana jika saya membutuhkan bantuan?",
+      answer: "Silakan buka halaman Hubungi Kami. Kanal kontak yang ditampilkan perlu dikonfirmasi sebagai kanal resmi sebelum digunakan untuk layanan pelanggan."
+    }
+  ];
+
+  return (
+    <section className="max-w-3xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-white">FAQ</h1>
+        <p className="text-sm text-neutral-400 mt-2">Pertanyaan umum mengenai penggunaan storefront.</p>
+      </div>
+      <div className="space-y-3">
+        {faqs.map((faq) => (
+          <details key={faq.question} className="bg-neutral-800/60 border border-neutral-700 rounded-xl p-5">
+            <summary className="cursor-pointer text-sm font-semibold text-white">{faq.question}</summary>
+            <p className="mt-3 text-sm text-neutral-300 leading-relaxed">{faq.answer}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PolicyDraftPage({ title, description }: { title: string; description: string }) {
+  return (
+    <section className="max-w-3xl mx-auto space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold text-white">{title}</h1>
+        <p className="text-sm text-neutral-400 mt-2">{description}</p>
+      </div>
+      <div className="bg-amber-950/30 border border-amber-700/50 rounded-xl p-5 space-y-2">
+        <p className="text-sm font-semibold text-amber-200">Konten kebijakan menunggu verifikasi</p>
+        <p className="text-sm text-neutral-300 leading-relaxed">
+          Halaman ini telah disiapkan sebagai tujuan navigasi, tetapi isi kebijakan final belum dimasukkan.
+          Ketentuan harus disusun dan disetujui berdasarkan proses bisnis serta data penjual yang sebenarnya.
+          Jangan menganggap halaman ini sebagai pernyataan syarat atau kebijakan yang telah berlaku.
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function TermsAndConditionsPage() {
+  return <PolicyDraftPage title="Syarat dan Ketentuan" description="Ketentuan penggunaan situs dan transaksi." />;
+}
+
+function PrivacyPolicyPage() {
+  return <PolicyDraftPage title="Kebijakan Privasi" description="Informasi mengenai pengumpulan, penggunaan, penyimpanan, dan perlindungan data pribadi." />;
+}
+
+function ShippingPolicyPage() {
+  return <PolicyDraftPage title="Kebijakan Pengiriman" description="Informasi proses pemrosesan pesanan, pengiriman, biaya, dan estimasi waktu." />;
+}
+
+function ReturnExchangePolicyPage() {
+  return <PolicyDraftPage title="Kebijakan Pengembalian dan Penukaran" description="Ketentuan pengajuan pengembalian barang atau penukaran produk." />;
+}
+
+function RefundPolicyPage() {
+  return <PolicyDraftPage title="Kebijakan Pengembalian Dana" description="Ketentuan proses, metode, dan waktu pengembalian dana." />;
+}
+
+function CancellationPolicyPage() {
+  return <PolicyDraftPage title="Kebijakan Pembatalan" description="Ketentuan dan proses pembatalan pesanan." />;
+}
+
+function OrderStatusPage() {
+  const [orderNumber, setOrderNumber] = useState("");
+
+  return (
+    <section className="max-w-xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-white">Status Pesanan</h1>
+        <p className="text-sm text-neutral-400 mt-2">
+          Halaman ini ditujukan untuk memeriksa status pesanan, termasuk status pembayaran dan pemrosesan pesanan.
+        </p>
+      </div>
+
+      <form onSubmit={(event) => event.preventDefault()} className="bg-neutral-800/60 border border-neutral-700 rounded-xl p-6 space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="order-number" className="block text-sm font-medium text-neutral-200">Nomor Pesanan</label>
+          <input
+            id="order-number"
+            type="text"
+            value={orderNumber}
+            onChange={(event) => setOrderNumber(event.target.value)}
+            placeholder="Masukkan nomor pesanan"
+            autoComplete="off"
+            className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-3 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-pink-500"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled
+          className="w-full bg-neutral-700 text-neutral-400 font-semibold py-3 rounded-lg cursor-not-allowed"
+        >
+          Pencarian belum tersedia
+        </button>
+        <p className="text-xs text-amber-200 leading-relaxed">
+          Pencarian belum diaktifkan karena kontrak endpoint backend dan mekanisme verifikasi pemilik pesanan belum tersedia.
+          Tidak ada status pesanan aktual yang dapat ditampilkan saat ini.
+        </p>
+      </form>
+
+      <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 space-y-2">
+        <h2 className="text-sm font-semibold text-white">Perbedaan informasi status</h2>
+        <p className="text-xs text-neutral-400 leading-relaxed">
+          Status pesanan menjelaskan proses pesanan; status pembayaran menjelaskan apakah pembayaran telah diverifikasi;
+          sedangkan pelacakan pengiriman menggunakan nomor resi dan data dari penyedia logistik.
+          Ketiganya tidak boleh dianggap sebagai status yang sama.
+        </p>
+      </div>
+    </section>
   );
 }
 
