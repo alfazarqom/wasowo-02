@@ -1142,6 +1142,17 @@ function ProductDetailPage() {
               <p className="text-sm text-neutral-300 leading-relaxed">{activeVariant.description}</p>
             </div>
           )}
+
+          {/* Rich Text Description */}
+          {activeVariant.rich_text_description && (
+            <div className="pt-4 border-t border-neutral-800 space-y-2">
+              <h3 className="text-xs font-semibold text-pink-400 uppercase tracking-wider">Detailed Specifications & Highlights</h3>
+              <div 
+                className="text-sm text-neutral-300 leading-relaxed space-y-2 prose prose-invert max-w-none prose-p:my-1 prose-ul:list-disc prose-ul:pl-4"
+                dangerouslySetInnerHTML={{ __html: activeVariant.rich_text_description }}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
