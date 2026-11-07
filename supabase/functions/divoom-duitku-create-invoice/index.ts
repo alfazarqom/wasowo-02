@@ -34,11 +34,6 @@ function normalizeCustomer(value: unknown, max: number): string {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
-function splitName(name: string) {
-  const parts = name.trim().split(/\s+/);
-  return { firstName: parts[0] || "Customer", lastName: parts.slice(1).join(" ") || "-" };
-}
-
 function clientIp(req: Request): string {
   return (req.headers.get("cf-connecting-ip") || req.headers.get("x-forwarded-for") || "unknown")
     .split(",")[0].trim();
@@ -245,8 +240,6 @@ Deno.serve(async (req: Request) => {
     const endpoint = environment === "production"
       ? "https://api-prod.duitku.com/api/merchant/createInvoice"
       : "https://api-sandbox.duitku.com/api/merchant/createInvoice";
-    const customerName = splitName(name);
-
     const duitkuPayload = {
       paymentAmount: totalAmount,
       merchantOrderId,
