@@ -308,6 +308,7 @@ Deno.serve(async (req: Request) => {
         .eq("merchant_order_id", merchantOrderId);
       return json({
         success: false,
+        invoiceOutcome: "unknown",
         error: "Payment creation could not be confirmed. Do not retry this order automatically; contact support with the order ID.",
         merchantOrderId,
       }, 502);
@@ -328,7 +329,7 @@ Deno.serve(async (req: Request) => {
       await supabase.from("divoom_orders")
         .update({ order_status: "payment_failed", updated_at: new Date().toISOString() })
         .eq("merchant_order_id", merchantOrderId);
-      return json({ success: false, error: "Duitku rejected the payment invoice request.", merchantOrderId }, 502);
+      return json({ success: false, invoiceOutcome: "rejected", error: "Duitku rejected the payment invoice request.", merchantOrderId }, 502);
     }
 
     if (!duitkuResponse.ok || statusCode !== "00" || !reference) {
@@ -342,6 +343,7 @@ Deno.serve(async (req: Request) => {
         .eq("merchant_order_id", merchantOrderId);
       return json({
         success: false,
+        invoiceOutcome: "unknown",
         error: "Duitku invoice result could not be confirmed. Do not retry this order automatically; contact support with the order ID.",
         merchantOrderId,
       }, 502);
@@ -354,11 +356,11 @@ Deno.serve(async (req: Request) => {
       .single();
     if (existingPaymentError || !existingPayment) {
       console.error("Payment reference pre-save lookup failed:", existingPaymentError?.message);
-      return json({ success: false, error: "Invoice was created but payment state could not be checked. Contact support with the order ID.", merchantOrderId }, 500);
+      return json({ success: false, invoiceOutcome: "unknown", error: "Invoice was created but payment state could not be checked. Contact support with the order ID.", merchantOrderId }, 500);
     }
     if (existingPayment.duitku_reference && existingPayment.duitku_reference !== reference) {
       console.error("Duitku reference mismatch for merchant order:", merchantOrderId);
-      return json({ success: false, error: "Payment reference mismatch. Contact support with the order ID.", merchantOrderId }, 409);
+      return json({ success: false, invoiceOutcome: "unknown", error: "Payment reference mismatch. Contact support with the order ID.", merchantOrderId }, 409);
     }
 
     const { error: saveReferenceError } = await supabase.from("divoom_payment_transactions")
@@ -373,7 +375,7 @@ Deno.serve(async (req: Request) => {
 
     if (saveReferenceError) {
       console.error("Duitku reference persistence failed:", saveReferenceError.message);
-      return json({ success: false, error: "Invoice was created but its reference could not be saved. Contact support with the order ID.", merchantOrderId }, 500);
+      return json({ success: false, invoiceOutcome: "unknown", error: "Invoice was created but its reference could not be saved. Contact support with the order ID.", merchantOrderId }, 500);
     }
 
     const { error: reconciliationError } = await supabase.rpc("divoom_reconcile_pending_payment_callbacks", {
