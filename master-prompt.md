@@ -1,241 +1,438 @@
-# MASTER PROMPT V1.0 — COMPLETE E-COMMERCE STOREFRONT APPLICATION
+# MASTER PROMPT FINAL — DIVОOM E-COMMERCE STOREFRONT APPLICATION
 
-## ROLE
+**Version:** FINAL 1.0  
+**Project:** Divoom Storefront  
+**Platform:** Gemini Canvas  
+**Stack:** React, Vite, TypeScript  
+**Product source:** Supabase Edge Function `get-divoom-products`
 
-Act as a Senior Frontend Engineer, UI/UX Designer, Software Architect, and Application Developer.
+---
 
-Your task is to design and build a complete, functional, modern E-Commerce Storefront Application using Gemini Canvas.
+## 1. ROLE AND MISSION
 
-Do not produce only a mockup, wireframe, or static UI. Build a working application with functional navigation, reusable components, interactive elements, and consistent application architecture.
+Act as a Senior Frontend Engineer, AI Application Architect, UI/UX Designer, React + TypeScript Engineer, and Quality Assurance Engineer.
 
-## 1. APPLICATION OBJECTIVE
+Build a complete, functional, maintainable, responsive single-store Divoom E-Commerce Storefront application in Gemini Canvas.
 
-Build a complete single-store E-Commerce Storefront.
+This is an implementation task, not merely a proposal, mockup, wireframe, or static prototype. Build working navigation, page layouts, reusable components, product browsing, variant selection, cart, wishlist, and a clearly bounded guest checkout experience.
 
-The application must support the customer journey:
+Inspect the existing project before making changes. Preserve working functionality and existing conventions where they are compatible with this specification. Do not replace or restructure files unnecessarily.
 
-Home → Browse Products → Product Detail → Wishlist / Cart → Checkout → Payment → Order Confirmation → Order Tracking.
+## 2. NON-NEGOTIABLE RULES
 
-Authentication is not required.
+1. Do not invent database columns, API parameters, response fields, product records, image URLs, category taxonomies, payment integrations, shipping integrations, or backend capabilities.
+2. Product information must come exclusively from the deployed Supabase Edge Function `get-divoom-products`.
+3. Never query `public.divoom_products` directly from browser code.
+4. Never use a frontend Supabase Database Client to retrieve product data.
+5. Never create mock, sample, hardcoded, or fallback product records.
+6. Do not modify the Supabase database, Edge Function, or backend configuration as part of this frontend task.
+7. Do not claim an order is persisted, a payment is completed, or a shipment is tracked unless a real backend confirms it.
+8. Do not add authentication, login, registration, or password flows.
+9. Do not silently substitute mock data when a request fails.
+10. If a requirement cannot be implemented from verified information, identify the exact blocker and avoid fabricating a solution.
 
-The application must support Guest Checkout.
+## 3. APPLICATION OBJECTIVE AND CUSTOMER JOURNEY
 
-## 2. TECHNOLOGY
+Build a single-store Divoom storefront supporting this journey:
+
+Home → Browse Products → Product Detail → Wishlist / Cart → Checkout → Payment information / return handling → Order result / tracking presentation.
+
+The application must support Guest Checkout. Customers can browse and use the storefront without signing in.
+
+The frontend must distinguish working client-side functionality from any demonstration-only or unavailable backend functionality.
+
+## 4. TECHNOLOGY AND PROJECT CONVENTIONS
 
 Use:
 - React
 - Vite
 - TypeScript
 - Modern CSS
-- React Router for page navigation
+- React Router
 - Reusable React components
-- Supabase Edge Function for product retrieval
+- Centralized product data service and shared product state
 
-Follow the existing project structure if a project is already provided. Do not unnecessarily replace or restructure working project files.
+Use the existing package manager, scripts, folder conventions, linting, and formatting configuration where present. Do not add dependencies unless needed and compatible with the existing project.
 
-## 3. PRODUCT DATA SOURCE — STRICT REQUIREMENT
+Keep secrets out of browser code. Never expose service-role keys or privileged credentials. Use only public client configuration and headers that are verified as required by the deployed Edge Function.
 
-The ONLY source of product data is the Supabase Edge Function:
+## 5. VERIFIED PRODUCT DATA SOURCE
 
-`get-divoom-products`
+The only product endpoint is:
+
+`/functions/v1/get-divoom-products`
+
+Supabase project reference previously inspected: `mvwflakurihhakdrlteg`.
+
+The deployed function source was inspected and found to:
+- Read from `public.divoom_products`.
+- Select raw table columns using `select("*")`.
+- Order records by `title`, then `id`.
+- Return a response wrapper with `success`, `data`, and `total`.
+- Collect records in batches of up to 500.
+- Have JWT verification disabled in its deployed configuration at the time of audit.
+
+Important verification boundary:
+- The function source and database schema were inspected.
+- A live HTTP invocation and its actual runtime response have not yet been independently verified in this audit.
+- Therefore, treat the response shape above as source-inspected, not runtime-tested.
+- Verify the actual endpoint URL, required request headers, status codes, CORS behavior, and runtime response before declaring integration verified.
+- Do not assume authentication headers or request parameters. Use only those confirmed by the deployed function and runtime test.
+
+Create one centralized product service responsible for:
+- Calling the Edge Function.
+- Parsing and validating the response.
+- Normalizing nullable fields without inventing values.
+- Exposing loading, success, empty, and error states.
+- Sharing the same retrieved product data with all product-related pages and components.
+
+All product-related UI must consume data from this service/shared product state. Do not make separate product requests from individual cards or components.
+
+If the runtime contract differs from the inspected source, follow the verified runtime contract and document the discrepancy. If it cannot be verified, stop product integration and report the blocker.
+
+## 6. DATABASE SCHEMA REFERENCE
+
+The inspected table is `public.divoom_products`. Its 24 columns are:
+
+| Column | Database type | Nullable |
+|---|---|---|
+| id | text | No |
+| item_group_id | text | No |
+| title | text | No |
+| description | text | Yes |
+| rich_text_description | text | Yes |
+| availability | text | Yes |
+| condition | text | Yes |
+| price | bigint | No |
+| sale_price | bigint | Yes |
+| link | text | Yes |
+| image_link | text | Yes |
+| additional_image_link | jsonb | No |
+| brand | text | Yes |
+| google_product_category | text | Yes |
+| product_type | text | Yes |
+| color | text | Yes |
+| size | text | Yes |
+| material | text | Yes |
+| pattern | text | Yes |
+| gender | text | Yes |
+| age_group | text | Yes |
+| additional_variant_attribute | text | Yes |
+| created_at | timestamptz | No |
+| updated_at | timestamptz | No |
+
+Use these names and types as the database reference, but still validate the actual Edge Function payload at runtime. Do not assume that a database column is always populated.
+
+Suggested TypeScript representation:
+
+```typescript
+interface DivoomProduct {
+  id: string;
+  item_group_id: string;
+  title: string;
+  description: string | null;
+  rich_text_description: string | null;
+  availability: string | null;
+  condition: string | null;
+  price: number;
+  sale_price: number | null;
+  link: string | null;
+  image_link: string | null;
+  additional_image_link: string[];
+  brand: string | null;
+  google_product_category: string | null;
+  product_type: string | null;
+  color: string | null;
+  size: string | null;
+  material: string | null;
+  pattern: string | null;
+  gender: string | null;
+  age_group: string | null;
+  additional_variant_attribute: string | null;
+  created_at: string;
+  updated_at: string;
+}
+```
+
+The interface is a schema-based implementation reference, not proof that the runtime response has already been tested. Validate JSON types before using them. In particular:
+- Treat `additional_image_link` as an array of URL strings only after validating each element.
+- Handle nullable fields.
+- Do not assume `price` or `sale_price` values are formatted currency strings.
+- Format currency in the presentation layer using Indonesian Rupiah conventions, without changing source values.
+- Do not infer stock quantity from `availability`. There is no verified stock quantity column in this schema.
+
+## 7. PRODUCT GROUPING AND VARIANT MAPPING
+
+### 7.1 Identifier rules
+
+- `id` identifies one individual database record.
+- `item_group_id` identifies the product group.
+- Multiple records with the same `item_group_id` belong to one product detail group.
+- Never use `id` as the product-group route identifier.
+- Product detail route: `/products/:item_group_id`.
+
+### 7.2 Verified audit snapshot
+
+The read-only database audit found:
+
+| Measurement | Audited result |
+|---|---:|
+| Product records | 44 |
+| Distinct product groups | 25 |
+| Multi-record groups | 10 |
+| Single-record groups | 15 |
+| Records with a non-empty color | 31 |
+| Records with null color | 13 |
+| Records with a non-empty main image URL | 5 |
+| Records with missing main image URL | 39 |
+| Records with non-empty additional image array | 1 |
+
+These numbers describe the database at audit time only. They are not constants and must never be hardcoded into application logic. Always calculate the current totals from the live Edge Function response.
+
+### 7.3 Grouping behavior
+
+Build product groups dynamically from the live records using `item_group_id`.
+
+Suggested type:
+
+```typescript
+interface ProductGroup {
+  item_group_id: string;
+  variants: DivoomProduct[];
+}
+```
 
 Requirements:
+1. Product listing pages display one ProductCard per product group, not one card per variant record.
+2. ProductDetailPage loads all records matching the selected `item_group_id`.
+3. A group with one record is a single-record product; do not show a redundant variant selector.
+4. A group with multiple records may show a variant selector using verified attributes from those records.
+5. Do not fabricate missing variants or attributes.
+6. Do not assume every record in a group has a distinct color.
+7. Preserve the original source record and its `id` when a variant is selected.
+8. When a variant changes, update the active record and all dependent product information consistently.
+9. Handle a missing or invalid group route with a proper not-found state.
 
-1. Retrieve all product information through this Edge Function.
-2. Never query `divoom_products` directly from the frontend.
-3. Never use Supabase Database Client to retrieve products.
-4. Never create mock, sample, or hardcoded product records.
-5. Never create a local fallback product dataset.
-6. Use the actual Edge Function response contract.
-7. Verify request parameters and response fields before implementation.
-8. Handle loading, success, empty, and error states.
-9. Do not invent product properties or response structures.
-10. Reuse the retrieved product data throughout the application.
+### 7.4 ProductCard representative data
 
-Create a centralized product service to handle requests to `get-divoom-products`.
+A ProductCard represents a group. Derive its display data deterministically from the group's actual records.
 
-All product-related components and pages must consume data through the centralized service or shared product state.
+- Do not select a random variant.
+- Do not create a synthetic database record.
+- Do not claim a particular variant is the default or best-selling unless supported by data.
+- Use a stable representative record selected by a documented deterministic rule.
+- If records in a group have inconsistent titles, do not silently merge or rewrite their source titles. Choose a deterministic display title and preserve variant-specific titles in detail where appropriate.
+- If showing a price range, calculate it from the actual group records and label it clearly.
+- If showing a single price, ensure it corresponds to the displayed/selected record.
+- Choose a group image only from a valid image URL belonging to a record in that same group.
+- If no record in the group has a valid image, show a neutral placeholder.
 
-Configuration:
+## 8. COLOR, SIZE, AND VARIANT SELECTOR
 
-- Supabase project URL: use existing project configuration.
-- Supabase Edge Function endpoint: `/functions/v1/get-divoom-products`.
-- Authentication headers: follow the actual deployed function requirements.
-- Do not expose service-role keys or privileged credentials in frontend code.
+Use actual data only.
 
-If the existing function contract cannot be verified, stop product integration and report the missing information. Do not fabricate an API contract.
+### Color
+- Use `color` values from the records in the current group.
+- Preserve source labels exactly, including values such as `Milky White`.
+- Do not normalize distinct source values into one color without an explicit approved mapping.
+- Null or blank color values must not create a selectable color option.
+- Deduplicate repeated color labels for display while retaining the corresponding source records.
+- If multiple records share a color, define a deterministic record-selection rule or expose another verified attribute if available. Do not arbitrarily discard records.
 
-## 4. APPLICATION ARCHITECTURE
+### Size
+- Use `size` only when actual non-empty values exist in the current group.
+- Do not show a size selector when no size values are available.
 
-Implement two primary layouts.
+### Variant behavior
+- Selecting an option must select a real record from the current group.
+- Update the active record's price, sale price, availability, images, description, and other displayed attributes where applicable.
+- Do not infer availability from color, image presence, or stock quantity.
+- Do not invent a stock status mapping. Display the source availability value or a carefully designed neutral state when null, until valid business rules are confirmed.
 
-### A. AppShell
+## 9. PRODUCT IMAGE MAPPING AND GALLERY
 
-AppShell must contain:
+### 9.1 Verified database observations
 
-- Header
-- MainPage / CurrentPage
-- Footer
-- BottomComponent
-- Overlays
+The audit found:
+- `additional_image_link` is JSONB and all 44 records contain an array.
+- 43 records have an empty array.
+- One record has a non-empty array.
+- That non-empty array belongs to product record `ditoopropink` in group `ditoopro`.
+- The non-empty array contains URL strings; its first URL duplicates that record's `image_link`.
+- Only 5 records have a non-empty `image_link`; 39 do not.
 
-Structure:
+These are audit-time observations. Revalidate live data; do not hardcode these counts.
 
+### 9.2 Gallery construction
+
+For the selected variant:
+1. Read `image_link` as the primary image when it is a valid non-empty URL.
+2. Read `additional_image_link` only after validating that it is an array of strings.
+3. Combine the primary image and additional image URLs.
+4. Remove duplicate URLs while preserving their first-seen order.
+5. Do not add images from another product group.
+6. Do not fabricate, guess, or rewrite image URLs.
+7. If no valid image exists, render a neutral placeholder with appropriate dimensions and accessible alternative text.
+8. Do not hide a product solely because it has no image.
+
+### 9.3 Variant image behavior
+
+When the active variant changes, update the gallery using only that variant's image fields. Do not continue showing the previous variant's images unless the same URL is actually present in the newly selected record.
+
+## 10. CATEGORY DATA RULES
+
+The inspected schema has `product_type` and `google_product_category`, but no dedicated category table or verified category hierarchy.
+
+Therefore:
+- Do not invent category names, parent-child relationships, or a taxonomy.
+- Inspect actual values before using either field as a storefront category source.
+- Use a field for category navigation only if its actual values are sufficiently consistent and meaningful for that purpose.
+- Do not assume `product_type` and `google_product_category` are interchangeable.
+- If no reliable category source exists, keep the required category pages in a clear empty/coming-from-data state or report the exact limitation. Do not generate fabricated categories or product assignments.
+
+## 11. APPLICATION ARCHITECTURE
+
+Implement two layout types: AppShell and Standalone.
+
+### 11.1 AppShell
+
+Structural order:
+
+```text
 AppShell
-- Header
-- MainPage
-  - CurrentPage
-- Footer
-- BottomComponent
-  - BottomNavigation OR BottomActionBar
-- Overlays
-  - Modal
-  - Drawer
-  - QuickView
-  - BottomSheet
-  - Toast
+├── Header
+├── MainPage
+│   └── CurrentPage
+├── Footer
+├── BottomComponent
+│   ├── BottomNavigation OR
+│   └── BottomActionBar
+└── Overlays
+    ├── Modal
+    ├── Drawer
+    ├── QuickView
+    ├── BottomSheet
+    └── Toast
+```
 
 Rules:
-
 - Header exists once per AppShell.
+- MainPage renders the active route page.
 - Footer exists once per AppShell.
 - BottomComponent exists once per AppShell.
 - BottomNavigation and BottomActionBar are mutually exclusive.
-- BottomActionBar must follow natural document flow, not fixed or absolute positioning.
-- Overlays must be managed independently of page content.
+- Select the bottom component from the active page route.
+- BottomActionBar remains in natural document flow; never use fixed or absolute positioning for it.
+- Overlays are managed independently from page content.
+- Do not duplicate shared layout components inside individual pages.
 
-### B. Standalone
+### 11.2 Standalone
 
-Standalone pages use a separate layout from AppShell.
-
+```text
 Standalone
-- Header
-- MainPage
-- Footer
+├── Header
+├── MainPage
+└── Footer
+```
 
-Do not duplicate layout components inside individual pages.
+Standalone pages do not render AppShell BottomNavigation or BottomActionBar.
 
-## 5. APP PAGES
+## 12. REQUIRED APPLICATION PAGES
 
-### A. AppShell Pages
+Implement exactly these 18 pages unless the user explicitly approves a change.
 
-Implement these 14 pages:
+### 12.1 AppShell — 14 pages
 
-1. HomePage
-   - Hero section
-   - Promotional banners
-   - Featured products
-   - New arrivals
-   - Product categories
-   - Product recommendations
+1. **HomePage**
+   - Hero section and promotional presentation.
+   - Featured products and new arrivals derived from live product data.
+   - Category section only when valid category data is available.
+   - Do not invent promotions, discounts, or product badges.
 
-2. ProductsPage
-   - Product listing
-   - Product grid
-   - Sorting
-   - Filtering
-   - Product cards
+2. **ProductsPage**
+   - Product groups, one ProductCard per `item_group_id`.
+   - Search/filter/sort controls only where supported by actual data.
+   - Product grid and loading, empty, and error states.
 
-3. ProductDetailPage
-   - Product gallery
-   - Product name
-   - Price
-   - Description
-   - Product specifications
-   - Color variants
-   - Size variants when available
-   - Quantity selector
-   - Add to cart
-   - Add to wishlist
+3. **ProductDetailPage**
+   - Product information from the selected group.
+   - Variant selector when multiple valid variants exist.
+   - Product gallery using the selected record's image fields.
+   - Price, sale price, availability, description, and specifications where available.
+   - Quantity selector, add to cart, and add to wishlist.
 
-4. CategoriesPage
-   - Category listing
-   - Category navigation
+4. **CategoriesPage**
+   - Category listing only from a verified category source.
+   - Do not fabricate categories.
 
-5. CategoryDetailPage
-   - Category information
-   - Products belonging to selected category
+5. **CategoryDetailPage**
+   - Products filtered using the verified category mapping.
+   - If no valid category mapping exists, explain the limitation through an appropriate empty/unavailable state.
 
-6. SearchPage
-   - Search input
-   - Search results
-   - Empty search state
+6. **SearchPage**
+   - Search input and results based on loaded live product data.
+   - Empty search and no-results states.
 
-7. WishlistPage
-   - Saved products
-   - Remove from wishlist
-   - Move to cart
+7. **WishlistPage**
+   - Saved products.
+   - Remove from wishlist and move/add to cart.
+   - Resolve saved product references against current live product data.
 
-8. CartPage
-   - Cart items
-   - Quantity management
-   - Remove items
-   - Subtotal
-   - Checkout navigation
+8. **CartPage**
+   - Cart items, quantity controls, remove action, subtotal, and checkout navigation.
+   - Cart lines must reference actual product records and selected variants.
 
-9. ProfilePage
-   - Guest customer information
-   - Customer details
-   - Contact information
+9. **ProfilePage**
+   - Guest customer information presentation.
+   - No account creation, authentication, or password management.
+   - Do not invent persisted customer profile data.
 
-10. OrdersPage
-    - Order history interface
-    - Order status
-    - Order navigation
+10. **OrdersPage**
+    - Order history only when a real order source is connected.
+    - Without backend persistence, show an explicitly labeled demonstration/empty state; do not fabricate historical orders.
 
-11. OrderDetailPage
-    - Order information
-    - Purchased items
-    - Payment information
-    - Shipping information
+11. **OrderDetailPage**
+    - Display order details only from actual available order state/data.
+    - Do not invent order identifiers, payment results, or shipping events.
 
-12. OrderTrackingPage
-    - Order tracking information
-    - Order status timeline
+12. **OrderTrackingPage**
+    - Display tracking information only when a real tracking source exists.
+    - Otherwise clearly state that live tracking is not connected.
 
-13. CheckoutPage
-    - Customer information
-    - Shipping address
-    - Order summary
-    - Shipping cost
-    - Total payment
-    - Checkout validation
+13. **CheckoutPage**
+    - Guest customer details, address form, order summary, validation, and total calculation.
+    - Shipping price/business rules must not be invented.
+    - If shipping rules are not configured, disclose the limitation and do not fabricate a final payable total.
 
-14. ContactPage
-    - Store contact information
-    - Contact options
+14. **ContactPage**
+    - Contact information and contact actions only from verified project configuration or supplied business information.
+    - Do not invent phone numbers, addresses, or social links.
 
-### B. Standalone Pages
+### 12.2 Standalone — 4 pages
 
-Implement these 4 pages:
+15. **PaymentPage**
+    - Payment summary and payment instructions only if a real payment integration or verified instructions exist.
+    - Otherwise present a clearly labeled demo/unavailable state.
 
-15. PaymentPage
-    - Payment summary
-    - Payment method presentation
-    - Payment instructions
-    - Payment status
+16. **PaymentReturnPage**
+    - Handle the return route safely.
+    - A browser redirect or query parameter alone is not proof of payment success.
+    - Never mark payment as successful without trusted backend confirmation.
 
-16. PaymentReturnPage
-    - Payment return handling
-    - Payment status presentation
+17. **OrderSuccessPage**
+    - Show confirmed success only when supported by actual order/payment confirmation.
+    - Otherwise show a neutral result/pending state with accurate wording.
 
-17. OrderSuccessPage
-    - Order confirmation
-    - Order summary
-    - Order tracking navigation
+18. **NotFoundPage**
+    - Clear 404 presentation and navigation back to HomePage.
 
-18. NotFoundPage
-    - 404 message
-    - Return to homepage
+Do not implement LoginPage, RegisterPage, ForgotPasswordPage, or authentication guards.
 
-Do not implement LoginPage, RegisterPage, or ForgotPasswordPage.
-
-## 6. BOTTOM COMPONENT RULES
+## 13. BOTTOM COMPONENT ROUTING RULES
 
 ### BottomNavigation
 
 Display on:
-
 - HomePage
 - ProductsPage
 - CategoriesPage
@@ -247,7 +444,6 @@ Display on:
 ### BottomActionBar
 
 Display on:
-
 - ProductDetailPage
 - SearchPage
 - CartPage
@@ -257,18 +453,14 @@ Display on:
 - ContactPage
 
 Rules:
+- Only one bottom component may render at a time.
+- Bottom component selection must follow the active route.
+- Standalone pages render neither component.
+- BottomActionBar must remain in natural document flow and must not be fixed or absolute.
 
-- Display only one bottom component at a time.
-- Select the component based on the active page.
-- Do not render both simultaneously.
-- Do not use fixed or absolute positioning for BottomActionBar.
+## 14. OVERLAYS
 
-Standalone pages do not display AppShell bottom components.
-
-## 7. OVERLAYS
-
-Create reusable overlay components:
-
+Create reusable:
 - Modal
 - Drawer
 - QuickView
@@ -276,59 +468,63 @@ Create reusable overlay components:
 - Toast
 
 Requirements:
+- Consistent visual system.
+- Accessible open/close controls and keyboard behavior where appropriate.
+- Correct layering and focus behavior.
+- Mobile-friendly interaction.
+- Avoid duplicate overlay state or competing overlay instances.
 
-- Reusable across pages.
-- Consistent visual design.
-- Proper open and close behavior.
-- Appropriate mobile interaction.
-- Avoid unnecessary overlay duplication.
+## 15. FUNCTIONAL REQUIREMENTS
 
-## 8. FUNCTIONAL REQUIREMENTS
+Implement and verify:
+- Route navigation and browser history.
+- Direct URL access and browser refresh.
+- Product data loading through the centralized service.
+- Product grouping by `item_group_id`.
+- Product detail and variant selection.
+- Search across actual available product fields.
+- Filtering and sorting only by actual supported data.
+- Product gallery and missing-image placeholder.
+- Quantity selection.
+- Add/remove/update cart items.
+- Add/remove wishlist items.
+- Cart subtotal calculation from actual selected product records.
+- Checkout form validation.
+- Order summary calculation.
+- Modal, Drawer, BottomSheet, QuickView, and Toast interactions.
+- Loading, empty, error, and not-found states.
 
-All major UI controls must work.
+Do not make a control appear functional if it has no real behavior. Disable or clearly label unavailable actions.
 
-Implement:
+## 16. CART AND WISHLIST PERSISTENCE
 
-- Page navigation
-- Product search
-- Product filtering
-- Product sorting
-- Product detail navigation
-- Variant selection
-- Quantity selection
-- Add to cart
-- Remove from cart
-- Update cart quantity
-- Add to wishlist
-- Remove from wishlist
-- Cart subtotal calculation
-- Checkout form validation
-- Order summary calculation
-- Toast notifications
-- Modal and Drawer interactions
-- Browser refresh and direct URL navigation
+Use localStorage for cart and wishlist only.
 
-Use localStorage for cart and wishlist persistence.
+Rules:
+- Persist stable product identifiers and selected variant identifiers, not a duplicate product catalog.
+- Reconcile stored cart/wishlist references against the latest Edge Function product data.
+- Handle removed or unavailable records without crashing.
+- Do not silently replace an invalid saved variant with a different variant.
+- Do not treat localStorage as a product database or trusted order database.
+- Validate quantities and calculations.
+- Do not assume a stock quantity field exists.
 
-Do not create fake product data to make interactions work.
+## 17. GUEST CHECKOUT, ORDERS, AND PAYMENTS
 
-## 9. GUEST CHECKOUT
+Guest checkout is mandatory; authentication is not.
 
-The application must not require customer authentication.
+Customer details are collected in CheckoutPage. Do not create authentication flows.
 
-Customer information is collected during checkout.
+No verified order persistence, payment gateway, shipping API, or tracking integration is included in the current product-data scope. Therefore:
+- Do not invent backend endpoints or database tables.
+- Do not claim orders persist across devices or sessions.
+- Do not claim payment has succeeded based on a client-side action.
+- Do not invent shipping prices or delivery estimates.
+- Keep demonstration behavior clearly labeled as a frontend demonstration.
+- Separate frontend form validation from actual order creation.
+- Keep payment and order pages structurally available while accurately communicating unavailable integrations.
 
-Do not implement:
-- Login
-- Registration
-- Password management
-- Authentication guards
-
-Guest users must be able to browse products, add products to their cart, and proceed to checkout.
-
-## 10. DESIGN SYSTEM
-
-Create a consistent modern storefront design.
+## 18. DESIGN SYSTEM AND RESPONSIVE UI
 
 Design direction:
 - Minimalist
@@ -338,26 +534,33 @@ Design direction:
 - Professional
 - Mobile-first
 
-Use:
-- Consistent typography
-- Consistent spacing scale
-- Consistent border radius
-- Reusable buttons
-- Reusable input fields
-- Reusable product cards
-- Consistent colors
-- Clear visual hierarchy
+Create reusable design tokens for:
+- Color
+- Typography
+- Spacing
+- Border radius
+- Shadows
+- Layout widths
+- Z-index/layering
+- Interaction states
+
+Use consistent typography, spacing, controls, buttons, form fields, product cards, and visual hierarchy.
 
 Responsive requirements:
-- Mobile-first design
-- Support mobile, tablet, and desktop
-- Maintain consistent layouts
-- Avoid horizontal overflow
+- Support mobile, tablet, and desktop.
+- Avoid horizontal overflow.
+- Maintain readable content and usable touch targets.
+- Keep product grids and navigation appropriate to viewport size.
+- Ensure image placeholders preserve layout dimensions and prevent layout shifts.
+- Provide visible focus states and accessible labels.
 
-## 11. REUSABLE COMPONENTS
+Do not invent a brand identity, logo asset, or business contact details if none are provided. Use existing project assets and verified brand configuration where available.
 
-Create reusable components, including:
+## 19. REUSABLE COMPONENTS
 
+Build reusable components as appropriate:
+- AppShell
+- StandaloneLayout
 - Header
 - Footer
 - BottomNavigation
@@ -377,139 +580,165 @@ Create reusable components, including:
 - LoadingState
 - EmptyState
 - ErrorState
+- ImagePlaceholder
 - Modal
 - Drawer
 - QuickView
 - BottomSheet
 - Toast
 
-Avoid unnecessary duplication.
+Keep business logic out of presentation components where practical. Avoid duplicated product fetching and duplicated layout elements.
 
-## 12. DATA AND STATE MANAGEMENT
+## 20. DATA AND STATE MANAGEMENT
 
-Use centralized state management for:
+Centralize state and services for:
+- Product data and request status.
+- Product groups and active variants.
+- Cart.
+- Wishlist.
+- Current route/page context.
+- Overlay state.
+- Checkout form state.
 
-- Product data
-- Cart
-- Wishlist
-- Active page context
-- UI overlays
-- Checkout state
+The Edge Function is the only source of product data. Cart and wishlist may persist locally. Order/payment state must not be represented as backend-confirmed unless it actually is.
 
-Product data must always originate from `get-divoom-products`.
+Use clear TypeScript types and runtime validation at external data boundaries. Handle unexpected response shapes safely.
 
-Cart and wishlist may use localStorage.
+## 21. ERROR AND EMPTY STATES
 
-Do not treat localStorage as a product database.
+Implement clear states for:
+- Product loading.
+- Product request failure.
+- Empty product response.
+- Invalid Edge Function response.
+- Missing product group.
+- Product without image.
+- Product without color or size.
+- Empty search results.
+- Empty cart.
+- Empty wishlist.
+- Invalid checkout fields.
+- Missing category mapping.
+- Unavailable order/payment/tracking integration.
+- Invalid route.
 
-Do not invent an order persistence backend, payment gateway, or shipping API.
+Never silently use mock data as a fallback.
 
-If no real order/payment integration is available, implement an explicitly identified frontend demonstration flow. Never report a real payment or order as completed without backend confirmation.
+## 22. IMPLEMENTATION WORKFLOW
 
-## 13. ERROR HANDLING
+Follow this sequence. Do not skip inspection or verification.
 
-Provide appropriate states for:
+### PHASE 1 — PROJECT INSPECTION
+- Inspect the existing repository/project structure.
+- Identify entry points, routes, components, styles, assets, package manager, and dependencies.
+- Identify existing functionality that must be preserved.
+- Inspect environment configuration without exposing secrets.
+- Inspect the deployed `get-divoom-products` source and verify the runtime request/response contract.
+- Record confirmed facts separately from assumptions and blockers.
 
-- Product loading
-- Product loading failure
-- No products available
-- No search results
-- Empty cart
-- Empty wishlist
-- Invalid checkout input
-- Missing product
-- Invalid route
+### PHASE 2 — REQUIREMENTS AND ARCHITECTURE
+- Confirm the 18-page route map.
+- Implement AppShell and Standalone layouts.
+- Implement BottomComponent route selection.
+- Define product service, product grouping, and state architecture.
+- Define category behavior based on verified data only.
 
-Never silently substitute mock data when the Edge Function fails.
+### PHASE 3 — DESIGN SYSTEM
+- Inspect existing assets and styles.
+- Define design tokens and reusable component styles.
+- Implement responsive behavior and accessibility foundations.
 
-## 14. IMPLEMENTATION WORKFLOW
+### PHASE 4 — PRODUCT DATA INTEGRATION
+- Implement the centralized Edge Function service.
+- Validate the actual runtime response.
+- Validate fields and JSON types.
+- Group records by `item_group_id`.
+- Implement representative ProductCard data and variant mapping.
+- Implement image gallery deduplication and placeholders.
+- Verify loading, empty, and error states.
 
-Follow this sequence:
+### PHASE 5 — PAGE IMPLEMENTATION
+- Implement all 18 required pages.
+- Reuse shared layouts and components.
+- Connect every product-facing page to shared live product data.
+- Keep unavailable backend-dependent features clearly bounded.
 
-PHASE 1 — PROJECT INSPECTION
-- Inspect the existing project.
-- Understand its structure.
-- Identify installed dependencies.
-- Identify existing routing and components.
-- Verify Edge Function configuration and contract.
+### PHASE 6 — INTERACTIONS
+- Implement routing, search, filters, sorting, variants, cart, wishlist, and checkout validation.
+- Implement overlays and notifications.
+- Implement localStorage persistence for cart and wishlist only.
 
-PHASE 2 — ARCHITECTURE
-- Establish AppShell.
-- Establish Standalone.
-- Establish page routing.
-- Establish BottomComponent selection.
-- Establish reusable components.
+### PHASE 7 — VERIFICATION
+- Run available type checks, lint, build, and tests.
+- Verify all 18 routes.
+- Verify direct URL access and browser refresh.
+- Verify Edge Function request and response at runtime.
+- Verify grouping and variant selection against live records.
+- Verify gallery URL validation and deduplication.
+- Verify missing-image behavior.
+- Verify cart and wishlist persistence and reconciliation.
+- Verify responsive behavior and no horizontal overflow.
+- Verify no fake payment/order/tracking success.
+- Report any unverified behavior or remaining blockers.
 
-PHASE 3 — DESIGN SYSTEM
-- Define design tokens.
-- Establish typography.
-- Establish colors.
-- Establish spacing.
-- Establish component styles.
+Do not claim a check passed unless it was actually run and its result inspected.
 
-PHASE 4 — DATA INTEGRATION
-- Implement get-divoom-products service.
-- Verify actual response structure.
-- Implement centralized product state.
-- Implement loading, empty, and error states.
+## 23. ACCEPTANCE CRITERIA
 
-PHASE 5 — PAGE IMPLEMENTATION
-- Build all 18 pages.
-- Implement reusable components.
-- Implement responsive layouts.
+The application is complete only when:
 
-PHASE 6 — FUNCTIONAL IMPLEMENTATION
-- Implement navigation.
-- Implement cart.
-- Implement wishlist.
-- Implement search and filtering.
-- Implement checkout interactions.
-- Implement overlay interactions.
+1. All 18 specified pages exist and route correctly.
+2. AppShell and Standalone layouts follow the defined structure.
+3. Footer appears once per layout, not duplicated inside pages.
+4. BottomNavigation and BottomActionBar follow the exact route rules and are mutually exclusive.
+5. BottomActionBar is in natural document flow.
+6. All product data originates exclusively from `get-divoom-products`.
+7. No frontend direct query to `divoom_products` exists.
+8. No mock, hardcoded, or fallback product records exist.
+9. ProductCard displays one group per `item_group_id`.
+10. ProductDetailPage loads records for the correct `item_group_id`.
+11. Variant selection uses actual records and updates the active record correctly.
+12. Null color/size values do not create fabricated options.
+13. Product images use only validated URLs from the selected record.
+14. Duplicate gallery URLs are removed.
+15. Products without images display a neutral placeholder and remain visible.
+16. Cart and wishlist work and persist through localStorage.
+17. Guest checkout does not require authentication.
+18. No unsupported order, payment, shipping, or tracking capability is claimed.
+19. Loading, empty, error, and not-found states are implemented.
+20. Direct URL navigation and refresh work.
+21. Responsive layouts work on mobile, tablet, and desktop.
+22. Type checks/build/tests available in the project pass, or failures are documented accurately.
+23. No critical runtime errors remain in the verified test flows.
 
-PHASE 7 — VERIFICATION
-- Verify all routes.
-- Verify all page layouts.
-- Verify product data retrieval.
-- Verify cart and wishlist.
-- Verify responsive behavior.
-- Verify error handling.
-- Verify browser refresh and direct URL access.
+## 24. FINAL DELIVERY REPORT
 
-## 15. ACCEPTANCE CRITERIA
+At completion, provide a concise but evidence-based report containing:
 
-The application is considered complete when:
+- Project structure inspected.
+- Architecture and routes implemented.
+- List of the 18 pages and their implementation status.
+- Reusable components created or reused.
+- Edge Function integration details and runtime verification status.
+- Product grouping and variant mapping behavior.
+- Product image mapping and missing-image handling.
+- Cart and wishlist behavior.
+- Guest checkout behavior and explicit integration limitations.
+- Type check, lint, build, and test results.
+- Route and responsive verification results.
+- Remaining blockers and unverified items.
 
-1. All 18 pages are implemented.
-2. AppShell and Standalone layouts work correctly.
-3. BottomNavigation and BottomActionBar follow the specified rules.
-4. All product data comes exclusively from `get-divoom-products`.
-5. No mock or hardcoded product records exist.
-6. Cart and wishlist work correctly.
-7. Guest Checkout works.
-8. Major UI interactions function correctly.
-9. All routes support direct navigation and refresh.
-10. Loading, empty, and error states are implemented.
-11. The application is responsive.
-12. No real payment success is fabricated.
-13. No critical runtime errors remain.
+Use these evidence labels:
+- **Verified:** directly inspected or successfully tested.
+- **Indication:** suggested by source or partial evidence but not fully tested.
+- **Not verified:** unavailable or not tested.
 
-## 16. FINAL INSTRUCTIONS
+Do not report the application as fully complete if critical acceptance criteria remain unverified or fail.
 
-Build the application, not just its documentation.
+## 25. FINAL EXECUTION INSTRUCTION
 
-Work systematically and preserve existing working functionality.
+Build the working application in the existing Gemini Canvas project. Prioritize correctness, maintainability, consistent architecture, accurate product mapping, and honest verification.
 
-Do not invent API contracts, product fields, backend capabilities, or business rules.
+Preserve existing working functionality. Do not modify Supabase schema or Edge Functions. Do not fabricate product data or unsupported backend behavior.
 
-If a requirement cannot be implemented because information is missing, report the exact blocker.
-
-At completion, provide:
-- Implemented application structure
-- List of all implemented pages
-- Reusable component list
-- Product integration details
-- Functional feature checklist
-- Verification results
-- Remaining limitations
-
-Your priority is a complete, consistent, functional, and maintainable E-Commerce Storefront Application.
+When blocked, state the exact missing information, the affected requirement, and the safest next step. Continue with independent requirements that can be implemented safely without inventing data or behavior.
