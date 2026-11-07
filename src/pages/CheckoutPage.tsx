@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { formatIDR } from '../utils/formatters';
+import { EDGE_FUNCTIONS } from '../config/backend';
 
 export function CheckoutPage() {
   const { cart, clearCart, showToast } = useApp();
@@ -28,12 +29,13 @@ export function CheckoutPage() {
     setSubmitting(true);
     setFormError(null);
     try {
-      const response = await fetch('https://mvwflakurihhakdrlteg.supabase.co/functions/v1/divoom-duitku-create-invoice', {
+      const response = await fetch(EDGE_FUNCTIONS.duitkuCheckout, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customer: formData,
-          items: cart.map((item) => ({ productId: item.product.id, quantity: item.quantity }))
+          items: cart.map((item) => ({ productId: item.product.id, quantity: item.quantity })),
+          expectedTotalAmount: totalAmount
         })
       });
       const payload = await response.json();
