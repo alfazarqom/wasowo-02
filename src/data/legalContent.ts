@@ -551,23 +551,24 @@ export const contactUsConfig: LegalDocumentConfig = {
   ],
   contactChannels: [
     {
-      name: 'Email Dukungan Resmi',
+      name: 'Telepon / WhatsApp',
+      value: '+6281234336327',
+      description: 'Hubungi Asri Collection untuk pertanyaan produk, pesanan, dan layanan pelanggan.',
+      actionUrl: 'tel:+6281234336327',
+      badge: 'Telepon'
+    },
+    {
+      name: 'Email',
       value: 'asricollections82@gmail.com',
-      description: 'Pertanyaan seputar pesanan, invoice Duitku, klaim garansi hardware, dan kerjasama bisnis.',
+      description: 'Kirim pertanyaan seputar pesanan, pembayaran, dan layanan pelanggan.',
       actionUrl: 'mailto:asricollections82@gmail.com',
-      badge: 'Email Utama'
+      badge: 'Email'
     },
     {
-      name: 'Pusat Garansi & Service Center',
-      value: 'Divoom Authorized Service Support',
-      description: 'Layanan inspeksi teknis unit, penggantian suku cadang orisinal, dan klaim RMA garansi 12 bulan.',
-      badge: 'Garansi Resmi'
-    },
-    {
-      name: 'Spesifikasi Integrasi & API',
-      value: 'Supabase Edge Functions & Duitku POP Gateway',
-      description: 'Status sistem backend transaksi beroperasi dengan enkripsi HMAC dan TLS berkeamanan tinggi.',
-      badge: 'Sistem Terverifikasi'
+      name: 'Alamat',
+      value: 'Sidenreng Rappang, Sulawesi Selatan',
+      description: 'Lokasi Asri Collection.',
+      badge: 'Lokasi'
     }
   ],
   relatedLinks: [
