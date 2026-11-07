@@ -97,7 +97,7 @@ export function CartPage() {
 
           <Link
             to="/checkout"
-            className="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-3 rounded-xl transition-transform active:scale-98 shadow-lg block text-center"
+            className="hidden md:block w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-3 rounded-xl transition-transform active:scale-98 shadow-lg text-center"
           >
             Checkout as Guest
           </Link>
