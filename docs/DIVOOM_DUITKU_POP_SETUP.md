@@ -12,7 +12,7 @@ Shipping: flat Rp52.000
 2. The Edge Function reads current product title, availability, price, and sale price from `public.divoom_products`.
 3. The Edge Function recalculates subtotal, shipping, and total using integer IDR. It rejects the request with HTTP 409 if the calculated total differs from `expectedTotalAmount`. No order or invoice is created on mismatch.
 4. The Edge Function creates the guest order, order items, and pending payment record, then sends Create Invoice to the official Duitku Sandbox endpoint.
-5. The frontend loads the Sandbox POP JavaScript library and calls `checkout.process(reference, options)`.
+5. The frontend loads the Sandbox POP JavaScript library; the customer explicitly clicks **Open Payment Window**, which calls `checkout.process(reference, options)`.
 6. Duitku's signed HTTP callback is the only source that changes payment status. Popup events and browser redirect only refresh or display server status.
 7. `OrderSuccessPage` independently checks the server status and displays confirmation only when the backend returns `paid`.
 
@@ -42,7 +42,7 @@ There is no separate quote table or quote-approval endpoint in this approved sco
 - `itemDetails.name` is limited to 50 characters. Item prices and quantities are integers, and the sum of `price × quantity` must equal `paymentAmount`.
 - The callback reference, amount, merchant order ID, and merchant code are checked before a status transition.
 - A valid signed callback can persist the provider reference when the Create Invoice response has not yet been saved. After a successful invoice reference save, the backend also invokes pending-callback reconciliation.
-- Ambiguous Create Invoice network/response failures remain pending; they are not marked as a definitive invoice failure and are not automatically retried with a new invoice.
+- Ambiguous Create Invoice network/response failures remain pending; the response returns an `invoiceOutcome: unknown` marker so the frontend preserves the order ID/email context, continues server-status polling, and does not automatically retry or launch a popup without a reference.
 - No explicit `expiryPeriod` is sent because the merchant's expiry configuration has not been verified.
 - Popup JavaScript events and return URL query parameters are not proof of payment.
 
