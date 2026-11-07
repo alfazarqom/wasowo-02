@@ -1,3 +1,5 @@
+project_id = "mvwflakurihhakdrlteg"
+
 # Keep the public storefront and Duitku callback endpoints aligned with
 # the currently deployed Supabase function authentication settings.
 [functions."get-divoom-products"]
