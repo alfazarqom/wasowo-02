@@ -1,54 +1,95 @@
 # Divoom Duitku POP — setup and review notes
 
 Target repository: `alfazarqom/wasowo-02`  
-Target Supabase project: `mvwflakurihhakdrlteg`  
-Integration: Duitku POP JavaScript popup  
+Target Supabase project observed during audit: `mvwflakurihhakdrlteg`  
+Integration: Duitku POP JavaScript Popup  
 Shipping: flat Rp52.000
 
-## Files
+## Source of truth
 
+The canonical provider contract for this repository is [DUITKU_POP_SOURCE_OF_TRUTH.md](./DUITKU_POP_SOURCE_OF_TRUTH.md).
+
+Official source: https://docs.duitku.com/pop/id/ (checked 2026-11-07). The current official documentation takes precedence over assumptions in existing code, comments, copied samples, and this setup note.
+
+## Relevant files
+
+- `docs/DUITKU_POP_SOURCE_OF_TRUTH.md` — canonical provider contract and project constraints.
 - `supabase/migrations/20261107000100_create_divoom_duitku_schema.sql`
+- `supabase/migrations/20261107000200_fix_callback_invoice_reference_race.sql`
 - `supabase/functions/divoom-duitku-create-invoice/index.ts`
 - `supabase/functions/divoom-duitku-callback/index.ts`
-- `App.tsx`
+- `src/pages/CheckoutPage.tsx`
+- `src/pages/PaymentPage.tsx`
+- `src/pages/PaymentReturnPage.tsx`
+- `src/pages/OrderSuccessPage.tsx`
 
 ## Required Supabase secrets
 
-Configure these in the Supabase project secret manager before deployment. Never put credentials in `App.tsx`.
+Configure these in the Supabase project secret manager before deployment. Never put credentials in frontend code.
 
 - `DUITKU_MERCHANT_CODE`
 - `DUITKU_API_KEY`
 - `DUITKU_ENV` — `sandbox` or `production`
-- `STOREFRONT_RETURN_URL` — public storefront URL with `?payment_return=1` appended
+- `STOREFRONT_RETURN_URL`
 - Supabase-provided `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
 
-The Edge Functions use service-role access internally. They must be deployed with JWT verification disabled because these two endpoints are public guest-checkout/callback endpoints; the functions enforce their own validation and rate limits. Do not expose the service-role key.
+Never expose the service-role key to the browser. Do not read or print secret values in audit reports.
 
-## Duitku POP contract implemented
+## Verified POP protocol contract
 
-- Create Invoice: POST JSON to the official sandbox or production endpoint.
-- Request headers: `x-duitku-timestamp` (UNIX milliseconds), `x-duitku-signature`, `x-duitku-merchantcode`.
-- Create Invoice signature: HMAC-SHA256 of `merchantCode + timestamp` using the merchant API key.
-- Callback: POST `application/x-www-form-urlencoded`.
-- Callback signature: HMAC-SHA256 of `merchantCode + amount + merchantOrderId` using the merchant API key.
-- Only callback `resultCode=00` marks the order paid. Other result codes mark it failed.
-- The browser popup JS events and return URL are not payment proof; the UI reads status from the server.
-- POP documentation does not specify a fixed callback acknowledgment body; this implementation responds `200 OK` after verified processing.
+### Create Invoice
 
-Official source of truth: https://docs.duitku.com/pop/id/ (checked 2026-11-07), sections Create Invoice, Callback, Duitku JS, and Redirect.
+- HTTP `POST`, `application/json`.
+- Sandbox: `https://api-sandbox.duitku.com/api/merchant/createInvoice`.
+- Production: `https://api-prod.duitku.com/api/merchant/createInvoice`.
+- Required headers: `x-duitku-timestamp` (UNIX milliseconds), `x-duitku-signature`, `x-duitku-merchantcode`.
+- Request signature: HMAC-SHA256 of `merchantCode + timestamp`, keyed by the merchant API key.
+- Required fields include `paymentAmount`, `merchantOrderId`, `productDetails`, `email`, `callbackUrl`, and `returnUrl`.
+- `itemDetails.name` maximum is **50 characters**; `price` and `paymentAmount` are integer IDR values without decimals.
+- The sum of item detail line totals must equal `paymentAmount`.
+- The response `reference` must be persisted and tied to the corresponding payment.
 
-## Important scope notes
+### HTTP Callback
 
-- The existing `divoom_products` table has no numeric stock column in the audited schema. This implementation checks `availability = 'in stock'` at checkout but does not reserve or decrement stock.
-- Shipping is included as a separate Rp52.000 line item and in the authoritative backend total.
-- Guest order status is retrieved by merchant order ID plus matching email and rate-limited.
-- No existing non-Divoom table or Edge Function is modified.
-- The migration is source only. It has NOT been executed. The functions have NOT been deployed. Secrets have NOT been set.
+- HTTP `POST`, `application/x-www-form-urlencoded`.
+- Callback signature: HMAC-SHA256 of `merchantCode + amount + merchantOrderId`, keyed by the merchant API key.
+- Documented result codes: `00` = success; `01` = failed. Unknown codes must not be silently mapped to failed or used to mutate payment state.
+- Validate signature, merchant code, merchant order ID, amount, reference, and allowed state transition.
+- Duitku requires HTTP `200 OK` and retries when it does not receive HTTP 200, up to five attempts according to the current documentation. Acknowledge only after the callback has been safely and durably handled.
 
-## Manual activation steps (not performed)
+### Popup and return URL
 
-1. Review and apply the migration to the intended Supabase project.
-2. Configure the required secrets.
-3. Deploy both functions with JWT verification disabled.
-4. Test only against Duitku Sandbox; verify callback, popup, duplicate callback, wrong signature, wrong amount, and guest status lookup.
-5. Do not switch `DUITKU_ENV` to production until merchant credentials and callback behavior are confirmed.
+- Popup JS library: Sandbox `https://app-sandbox.duitku.com/lib/js/duitku.js`; Production `https://app-prod.duitku.com/lib/js/duitku.js`.
+- JS callback events are for UI only; they cannot update authoritative payment status.
+- Return URL query parameters, including `resultCode`, can be manually changed by the customer and must not update payment state.
+- Payment status must come from a server-authoritative read after secure authorization.
+
+See the canonical source-of-truth document for the full contract and review checklist.
+
+## Project-specific constraints
+
+- Database objects use the `divoom_` prefix; Edge Functions use the `divoom-` prefix.
+- Shipping is flat Rp52.000 and included exactly once in the server-authoritative amount.
+- Guest checkout remains supported; mandatory customer authentication is not introduced.
+- `expiryPeriod` is omitted unless merchant configuration and an explicit approved requirement establish its value. The current project decision is to follow merchant configuration; no fixed value has been selected.
+- Guest order lookup hardening remains a deferred dependency. Do not expose order details through merchant order ID + email alone.
+- Quantitative inventory reservation/decrement and automated refund are outside the approved scope.
+- Do not invent or implement a provider inquiry/status endpoint without verifying it in the current official POP documentation and merchant configuration.
+
+## Current implementation review notes (static inspection)
+
+The following are code observations, not runtime test results:
+
+- Create Invoice request signature and endpoint selection currently follow the documented POP contract.
+- Callback transport and callback signature formula currently follow the documented POP contract.
+- Create Invoice currently truncates `itemDetails.name` to 255 characters; this must be corrected to the documented 50-character limit.
+- Callback currently treats every non-`00` result code as failed; it must explicitly validate documented codes and safely reject/quarantine unknown values.
+- Create Invoice network exceptions currently set local payment status to `invoice_failed`; an ambiguous provider outcome must not be treated as a definitive rejection.
+- After saving the Duitku reference, the current Create Invoice handler does not invoke callback reconciliation.
+- Checkout currently creates the invoice directly without a separately persisted buyer approval bound to the final backend quote.
+- Order Success currently renders a confirmed-payment message without verifying a server-authoritative status.
+- Guest order lookup is not to be expanded until the deferred secure access mechanism is decided.
+
+## Operational boundary
+
+Migration files in the repository are proposals only unless separately approved for execution. This documentation update does not execute migrations, mutate the live Supabase database, read or change secrets, change merchant settings, create Sandbox transactions, deploy functions, merge branches, or deploy the application.
