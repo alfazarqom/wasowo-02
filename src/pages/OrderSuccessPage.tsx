@@ -13,14 +13,14 @@ export function OrderSuccessPage() {
 
     const verifyPayment = async () => {
       const merchantOrderId = orderId ?? '';
-      let pending: { merchantOrderId?: string; email?: string } | null = null;
-
-      try {
-        const stored = localStorage.getItem('divoom_pending_payment');
-        pending = stored ? JSON.parse(stored) : null;
-      } catch {
-        pending = null;
-      }
+      const pending: { merchantOrderId?: string; email?: string } | null = (() => {
+        try {
+          const stored = localStorage.getItem('divoom_pending_payment');
+          return stored ? JSON.parse(stored) : null;
+        } catch {
+          return null;
+        }
+      })();
 
       if (!merchantOrderId || !pending?.email || pending.merchantOrderId !== merchantOrderId) {
         if (!cancelled) setConfirmation('unavailable');
