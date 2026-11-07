@@ -207,8 +207,6 @@ interface AppContextType {
   navigate: (route: string, param?: string | null) => void;
   toastMessage: string | null;
   showToast: (msg: string) => void;
-  quickViewProductGroup: ProductGroup | null;
-  setQuickViewProductGroup: (pg: ProductGroup | null) => void;
   searchTerm: string;
   setSearchTerm: (s: string) => void;
 }
@@ -286,7 +284,6 @@ export default function App() {
 
   // UI Overlays
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [quickViewProductGroup, setQuickViewProductGroup] = useState<ProductGroup | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
 
   useEffect(() => {
@@ -459,8 +456,6 @@ export default function App() {
       navigate,
       toastMessage,
       showToast,
-      quickViewProductGroup,
-      setQuickViewProductGroup,
       searchTerm,
       setSearchTerm
     }}>
@@ -488,14 +483,6 @@ export default function App() {
           <StandaloneLayout />
         ) : (
           <AppShell />
-        )}
-
-        {/* Global QuickView Modal */}
-        {quickViewProductGroup && (
-          <QuickViewModal
-            group={quickViewProductGroup}
-            onClose={() => setQuickViewProductGroup(null)}
-          />
         )}
       </div>
     </AppContext.Provider>
@@ -1775,7 +1762,7 @@ function NotFoundPage() {
 // ==========================================
 
 function ProductCard({ group }: { group: ProductGroup }) {
-  const { navigate, setQuickViewProductGroup, toggleWishlist, isInWishlist } = useApp();
+  const { navigate, toggleWishlist, isInWishlist } = useApp();
   const rep = group.representativeRecord;
   const isMultiPrice = group.minPrice !== group.maxPrice;
   const isWishlisted = isInWishlist(rep.id);
@@ -1807,14 +1794,6 @@ function ProductCard({ group }: { group: ProductGroup }) {
           <svg className="w-4 h-4" fill={isWishlisted ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
-        </button>
-
-        {/* Quick View Button */}
-        <button
-          onClick={() => setQuickViewProductGroup(group)}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-neutral-900/90 text-white text-[11px] font-semibold px-3 py-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm whitespace-nowrap"
-        >
-          Quick View
         </button>
       </div>
 
@@ -1849,59 +1828,6 @@ function ProductCard({ group }: { group: ProductGroup }) {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function QuickViewModal({ group, onClose }: { group: ProductGroup; onClose: () => void }) {
-  const { addToCart, navigate } = useApp();
-  const rep = group.representativeRecord;
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-neutral-900 border border-neutral-700 rounded-2xl max-w-lg w-full p-6 relative space-y-4">
-        <button onClick={onClose} className="absolute top-4 right-4 text-neutral-400 hover:text-white">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-
-        <div className="flex gap-4">
-          <div className="w-28 h-28 bg-neutral-800 rounded-xl overflow-hidden flex-shrink-0">
-            {rep.image_link ? (
-              <img src={rep.image_link} alt={group.title} className="w-full h-full object-cover" />
-            ) : (
-              <PlaceholderImage text={group.title} />
-            )}
-          </div>
-          <div className="flex-1 min-w-0 space-y-1">
-            <h3 className="text-base font-bold text-white">{group.title}</h3>
-            <p className="text-xs text-pink-400 font-extrabold">{formatIDR(group.minPrice)}</p>
-            <p className="text-xs text-neutral-400 line-clamp-2 mt-2">{rep.description}</p>
-          </div>
-        </div>
-
-        <div className="flex gap-3 pt-2">
-          <button
-            onClick={() => {
-              addToCart(rep);
-              onClose();
-            }}
-            className="flex-1 bg-pink-600 text-white text-xs font-bold py-2.5 rounded-lg"
-          >
-            Add Representative to Cart
-          </button>
-          <button
-            onClick={() => {
-              onClose();
-              navigate('product-detail', group.item_group_id);
-            }}
-            className="bg-neutral-800 border border-neutral-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg"
-          >
-            Full Specs
           </button>
         </div>
       </div>
