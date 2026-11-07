@@ -1,6 +1,6 @@
 # MASTER PROMPT FINAL — DIVOOM E-COMMERCE STOREFRONT APPLICATION
 
-**Version:** FINAL 1.0  
+**Version:** FINAL 1.1  
 **Project:** Divoom Storefront  
 **Platform:** Gemini Canvas  
 **Stack:** React, Vite, TypeScript  
@@ -55,6 +55,50 @@ Use:
 Use the existing package manager, scripts, folder conventions, linting, and formatting configuration where present. Do not add dependencies unless needed and compatible with the existing project.
 
 Keep secrets out of browser code. Never expose service-role keys or privileged credentials. Use only public client configuration and headers that are verified as required by the deployed Edge Function.
+
+## 4.1. REQUIRED GEMINI CANVAS DELIVERABLE — APP.JSX
+
+**The primary application deliverable MUST be a working `App.jsx` file created in the Gemini Canvas application.** This requirement is mandatory and takes precedence over any convention that would otherwise make `App.tsx` the only application entry point.
+
+### App.jsx requirements
+
+1. Create or update `App.jsx` as the primary React application entry point in Gemini Canvas.
+2. The Gemini Canvas preview must render the application through `App.jsx`. Do not deliver only a written plan, wireframe, screenshot, architecture description, or disconnected component snippets.
+3. `App.jsx` must integrate the application shell, route/page rendering, shared state, product service, navigation, responsive bottom-component rules, and overlay system.
+4. Keep `App.jsx` readable and maintainable. Extract reusable components, hooks, services, types, and utilities into supporting files when the Canvas project supports a multi-file structure.
+5. All supporting files must be imported and used by `App.jsx`; do not create unused or disconnected files.
+6. If Gemini Canvas is operating in a single-file environment, implement the complete working application in `App.jsx`, with clearly separated components and functions in that file.
+7. Do not substitute `App.tsx`, `main.tsx`, or another file as the sole deliverable. If the existing Vite project uses a TypeScript bootstrap, keep that bootstrap compatible and ensure it imports/renders `App.jsx`.
+8. Use JavaScript/JSX syntax in `App.jsx`. Supporting modules may use TypeScript where the existing project and Gemini Canvas support it. Do not add TypeScript-only syntax to `App.jsx`.
+9. If the existing project has a different entry point, inspect it and make the smallest safe integration change so that the active application ultimately renders `App.jsx`. Preserve existing project configuration where possible.
+10. Do not claim success merely because the file exists. Verify that Canvas can compile/render the application and that the preview displays the implemented storefront.
+
+### Required App.jsx integration
+
+The rendered application must include and connect:
+- AppShell and Standalone layouts.
+- Header, MainPage/active page, and Footer.
+- All 18 required pages and route handling.
+- Route-aware BottomNavigation / BottomActionBar selection.
+- Mobile-only BottomActionBar visibility and natural document flow.
+- Overlay management.
+- Centralized `get-divoom-products` service and shared product state.
+- Product grouping by `item_group_id` and real-record variant selection.
+- Cart and Wishlist state with localStorage persistence.
+- Guest checkout and honest unavailable-integration states.
+- Loading, empty, error, and not-found states.
+- Responsive mobile, tablet, and desktop rendering.
+
+### Gemini Canvas execution and verification
+
+- Work directly in the existing Gemini Canvas application/project.
+- Inspect the available file tree and current entry point before editing.
+- Create/update `App.jsx` and any required supporting files in Canvas.
+- Ensure all imports, exports, dependencies, and route references resolve.
+- Run or use the available Canvas preview/build feedback to identify compile-time and runtime errors.
+- Fix errors before reporting completion.
+- Test representative routes and viewport widths in the rendered preview.
+- If Canvas cannot create a requested supporting file or run a verification step, report that limitation explicitly; do not pretend it was completed.
 
 ## 5. VERIFIED PRODUCT DATA SOURCE
 
@@ -679,6 +723,13 @@ Follow this sequence. Do not skip inspection or verification.
 - Inspect the deployed `get-divoom-products` source and verify the runtime request/response contract.
 - Record confirmed facts separately from assumptions and blockers.
 
+### PHASE 1A — GEMINI CANVAS APP ENTRY POINT
+- Inspect how the current Gemini Canvas project represents files and selects its React entry point.
+- Create or update `App.jsx` as the mandatory primary application component.
+- Connect the active project bootstrap to render `App.jsx`; preserve the existing Vite/React setup where possible.
+- Decide whether supporting files can be created based on the actual Canvas project capabilities. If not, keep the implementation in `App.jsx`.
+- Confirm that the initial `App.jsx` renders in the Gemini Canvas preview before proceeding with the full page implementation.
+
 ### PHASE 2 — REQUIREMENTS AND ARCHITECTURE
 - Confirm the 18-page route map.
 - Implement AppShell and Standalone layouts.
@@ -728,41 +779,51 @@ Do not claim a check passed unless it was actually run and its result inspected.
 
 ## 23. ACCEPTANCE CRITERIA
 
-The application is complete only when:
+The application is complete only when all applicable criteria below are verified:
 
-1. All 18 specified pages exist and route correctly.
-2. AppShell and Standalone layouts follow the defined structure.
-3. Footer appears once per layout, not duplicated inside pages.
-4. BottomNavigation and BottomActionBar follow the exact route rules and are mutually exclusive on mobile.
-5. BottomActionBar appears only at 320px–767px; it is not rendered at 768px and wider.
-6. Hiding BottomActionBar on tablet/desktop leaves no empty reserved area, and the relevant actions remain accessible through page content or desktop controls.
-7. BottomActionBar is in natural document flow and is never fixed, sticky, or absolute.
-6. All product data originates exclusively from `get-divoom-products`.
-7. No frontend direct query to `divoom_products` exists.
-8. No mock, hardcoded, or fallback product records exist.
-9. ProductCard displays one group per `item_group_id`.
-10. ProductDetailPage loads records for the correct `item_group_id`.
-11. Variant selection uses actual records and updates the active record correctly.
-12. Null color/size values do not create fabricated options.
-13. Product images use only validated URLs from the selected record.
-14. Duplicate gallery URLs are removed.
-15. Products without images display a neutral placeholder and remain visible.
-16. Cart and wishlist work and persist through localStorage.
-17. Guest checkout does not require authentication.
-18. No unsupported order, payment, shipping, or tracking capability is claimed.
-19. Loading, empty, error, and not-found states are implemented.
-20. Direct URL navigation and refresh work.
-24. Responsive layouts work on mobile, tablet, and desktop, including narrow widths and intermediate viewport sizes.
-25. No horizontal page overflow occurs at tested viewport widths.
-26. BottomActionBar is visible on mobile widths from 320px through 767px and absent at 768px and wider.
-27. BottomActionBar actions remain accessible on tablet/desktop through normal page controls, without a blank reserved bottom area.
-28. Type checks/build/tests available in the project pass, or failures are documented accurately.
-29. No critical runtime errors remain in the verified test flows.
+1. A working `App.jsx` file exists in the Gemini Canvas project and is the primary application component.
+2. The active Gemini Canvas application/preview renders through `App.jsx`; the file is not merely present but disconnected.
+3. Supporting files, if created, are correctly imported and integrated; no required component or service is left disconnected.
+4. All 18 specified pages exist and route correctly.
+5. AppShell and Standalone layouts follow the defined structure.
+6. Footer appears once per layout, not duplicated inside pages.
+7. BottomNavigation and BottomActionBar follow the exact route rules and are mutually exclusive on mobile.
+8. BottomActionBar appears only at 320px–767px; it is not rendered at 768px and wider.
+9. Hiding BottomActionBar on tablet/desktop leaves no empty reserved area, and the relevant actions remain accessible through page content or desktop controls.
+10. BottomActionBar is in natural document flow and is never fixed, sticky, or absolute.
+11. All product data originates exclusively from `get-divoom-products`.
+12. No frontend direct query to `divoom_products` exists.
+13. No mock, hardcoded, or fallback product records exist.
+14. ProductCard displays one group per `item_group_id`.
+15. ProductDetailPage loads records for the correct `item_group_id`.
+16. Variant selection uses actual records and updates the active record correctly.
+17. Null color/size values do not create fabricated options.
+18. Product images use only validated URLs from the selected record.
+19. Duplicate gallery URLs are removed.
+20. Products without images display a neutral placeholder and remain visible.
+21. Cart and wishlist work and persist through localStorage.
+22. Guest checkout does not require authentication.
+23. No unsupported order, payment, shipping, or tracking capability is claimed.
+24. Loading, empty, error, and not-found states are implemented.
+25. Direct URL navigation and refresh work where supported by the Canvas runtime/router.
+26. Responsive layouts work on mobile, tablet, and desktop, including narrow widths and intermediate viewport sizes.
+27. No horizontal page overflow occurs at tested viewport widths.
+28. BottomActionBar is visible on mobile widths from 320px through 767px and absent at 768px and wider.
+29. BottomActionBar actions remain accessible on tablet/desktop through normal page controls, without a blank reserved bottom area.
+30. Available type checks, lint, build, tests, and/or Canvas preview checks pass, or failures are documented accurately.
+31. No critical runtime errors remain in the verified test flows.
 
+Do not mark a criterion as verified unless the relevant file, rendered preview, or test result was actually inspected. If Gemini Canvas does not expose a particular verification mechanism, mark that criterion Not verified and explain why.
+ 
 ## 24. FINAL DELIVERY REPORT
 
 At completion, provide a concise but evidence-based report containing:
 
+- Gemini Canvas project structure and active entry point inspected.
+- `App.jsx` file path and implementation status.
+- Confirmation whether the active Gemini Canvas preview renders through `App.jsx`.
+- Supporting files created and how they are integrated into `App.jsx`.
+- Application rendering/compile status and the exact verification method used.
 - Project structure inspected.
 - Architecture and routes implemented.
 - List of the 18 pages and their implementation status.
@@ -783,9 +844,9 @@ Use these evidence labels:
 
 Do not report the application as fully complete if critical acceptance criteria remain unverified or fail.
 
-## 25. FINAL EXECUTION INSTRUCTION
+## 26. FINAL EXECUTION INSTRUCTION
 
-Build the working application in the existing Gemini Canvas project. Prioritize correctness, maintainability, consistent architecture, accurate product mapping, and honest verification.
+Create and maintain the working application directly in the existing Gemini Canvas project, with `App.jsx` as the mandatory primary application component and rendered application entry. Prioritize correctness, maintainability, consistent architecture, accurate product mapping, and honest verification.
 
 Preserve existing working functionality. Do not modify Supabase schema or Edge Functions. Do not fabricate product data or unsupported backend behavior.
 
