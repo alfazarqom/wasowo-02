@@ -11,14 +11,14 @@ export function PaymentPage() {
 
   useEffect(() => {
     let cancelled = false;
-    let pending: { merchantOrderId?: string; reference?: string; email?: string } | null = null;
-
-    try {
-      const stored = localStorage.getItem('divoom_pending_payment');
-      pending = stored ? JSON.parse(stored) : null;
-    } catch {
-      pending = null;
-    }
+    const pending: { merchantOrderId?: string; reference?: string; email?: string } | null = (() => {
+      try {
+        const stored = localStorage.getItem('divoom_pending_payment');
+        return stored ? JSON.parse(stored) : null;
+      } catch {
+        return null;
+      }
+    })();
 
     const merchantOrderId = paramOrderId || pending?.merchantOrderId;
     if (!pending?.reference || !pending?.email || !merchantOrderId || pending.merchantOrderId !== merchantOrderId) {
