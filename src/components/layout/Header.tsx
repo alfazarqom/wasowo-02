@@ -20,12 +20,15 @@ export function Header({ isMinimal = false }: { isMinimal?: boolean }) {
         {/* Brand Logo */}
         <Link 
           to="/" 
-          aria-label="Home"
-          className="flex items-center gap-2 group select-none"
+          aria-label="Asri Collection"
+          className="flex items-center gap-2.5 group select-none"
         >
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-lg group-hover:scale-105 transition-transform">
-            D
+            A
           </div>
+          <span className="font-bold text-base tracking-tight text-white hidden sm:inline-block">
+            ASRI<span className="text-pink-500"> COLLECTION</span>
+          </span>
         </Link>
 
         {/* Desktop Search Bar (Non-Minimal) */}
@@ -33,7 +36,7 @@ export function Header({ isMinimal = false }: { isMinimal?: boolean }) {
           <div className="hidden md:flex flex-1 max-w-md mx-4 relative">
             <input
               type="text"
-              placeholder="Search pixel art speakers, frames..."
+              placeholder="Cari produk di Asri Collection..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => {
