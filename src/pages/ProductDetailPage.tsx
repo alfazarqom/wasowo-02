@@ -7,10 +7,10 @@ import { EmptyState } from '../components/common/EmptyState';
 
 export function ProductDetailPage() {
   const { groupId } = useParams<{ groupId: string }>();
-  const { productGroups, addToCart, toggleWishlist, isInWishlist, setSelectedProductVariant } = useApp();
+  const { productGroups, loading, addToCart, toggleWishlist, isInWishlist, setSelectedProductVariant } = useApp();
 
   const group = useMemo(() => {
-    return productGroups.find(g => g.item_group_id === groupId) || productGroups[0];
+    return productGroups.find(g => g.item_group_id === groupId);
   }, [productGroups, groupId]);
 
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
@@ -33,6 +33,14 @@ export function ProductDetailPage() {
       setSelectedProductVariant(null);
     };
   }, [activeVariant, setSelectedProductVariant]);
+
+  if (loading) {
+    return (
+      <div role="status" aria-live="polite" className="py-16 text-center text-sm text-neutral-400">
+        Loading product...
+      </div>
+    );
+  }
 
   if (!group || !activeVariant) {
     return <EmptyState title="Product Not Found" subtitle="The requested product group does not exist." />;
