@@ -127,10 +127,10 @@ Deno.serve(async (req: Request) => {
     const postalCode = normalizeCustomer(customer.postalCode, 10);
     const deliveryNotes = normalizeCustomer(customer.deliveryNotes, 500);
 
-    if (!name || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || !phone || !address ||
+    if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !phone || !address ||
       !provinceId || !provinceName || !regencyId || !regencyName ||
       !districtId || !districtName || !villageId || !villageName ||
-      !/^\\d{4,10}$/.test(postalCode)) {
+      !/^\d{4,10}$/.test(postalCode)) {
       return json({ success: false, error: "Valid contact details and complete Indonesian shipping address are required." }, 400);
     }
     if (!Array.isArray(payload?.items) || payload.items.length < 1 || payload.items.length > 30) {
