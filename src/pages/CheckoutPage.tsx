@@ -9,12 +9,37 @@ const REGION_API = 'https://www.emsifa.com/api-wilayah-indonesia/v2';
 async function fetchRegions(path: string): Promise<RegionOption[]> {
   const response = await fetch(`${REGION_API}/${path}`, { headers: { Accept: 'application/json' } });
   if (!response.ok) throw new Error('Gagal memuat data wilayah. Silakan coba lagi.');
-  const data: unknown = await response.json();
-  if (!Array.isArray(data)) throw new Error('Format data wilayah tidak valid.');
-  return data.filter((item): item is { id: string | number; name: string } =>
-    item !== null && typeof item === 'object' && 'id' in item && 'name' in item &&
-    (typeof item.id === 'string' || typeof item.id === 'number') && typeof item.name === 'string'
-  ).map((item) => ({ id: String(item.id), name: item.name }));
+
+  const payload: unknown = await response.json();
+  const records: unknown[] | null = Array.isArray(payload)
+    ? payload
+    : payload !== null && typeof payload === 'object' &&
+        'data' in payload && Array.isArray(payload.data)
+      ? payload.data
+      : null;
+
+  if (!records || records.length === 0) {
+    throw new Error('Format data wilayah tidak valid atau data wilayah kosong.');
+  }
+
+  const options: RegionOption[] = [];
+  for (const item of records) {
+    if (
+      item === null ||
+      typeof item !== 'object' ||
+      !('id' in item) ||
+      !('name' in item) ||
+      (typeof item.id !== 'string' && typeof item.id !== 'number') ||
+      typeof item.name !== 'string' ||
+      String(item.id).trim() === '' ||
+      item.name.trim() === ''
+    ) {
+      throw new Error('Format data wilayah tidak valid.');
+    }
+    options.push({ id: String(item.id), name: item.name.trim() });
+  }
+
+  return options;
 }
 
 function RegionSelect({ label, value, options, disabled, loading, onChange }: {
