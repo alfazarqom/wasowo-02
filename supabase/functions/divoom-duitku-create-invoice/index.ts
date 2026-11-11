@@ -115,10 +115,23 @@ Deno.serve(async (req: Request) => {
     const email = normalizeCustomer(customer.email, 255).toLowerCase();
     const phone = normalizeCustomer(customer.phone, 50);
     const address = normalizeCustomer(customer.address, 500);
-    const city = normalizeCustomer(customer.city, 120);
+    const city = normalizeCustomer(customer.regencyName ?? customer.city, 120);
+    const provinceId = normalizeCustomer(customer.provinceId, 32);
+    const provinceName = normalizeCustomer(customer.provinceName, 120);
+    const regencyId = normalizeCustomer(customer.regencyId, 32);
+    const regencyName = normalizeCustomer(customer.regencyName, 120);
+    const districtId = normalizeCustomer(customer.districtId, 32);
+    const districtName = normalizeCustomer(customer.districtName, 120);
+    const villageId = normalizeCustomer(customer.villageId, 40);
+    const villageName = normalizeCustomer(customer.villageName, 120);
+    const postalCode = normalizeCustomer(customer.postalCode, 10);
+    const deliveryNotes = normalizeCustomer(customer.deliveryNotes, 500);
 
-    if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !address) {
-      return json({ success: false, error: "Valid name, email, and shipping address are required." }, 400);
+    if (!name || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || !phone || !address ||
+      !provinceId || !provinceName || !regencyId || !regencyName ||
+      !districtId || !districtName || !villageId || !villageName ||
+      !/^\\d{4,10}$/.test(postalCode)) {
+      return json({ success: false, error: "Valid contact details and complete Indonesian shipping address are required." }, 400);
     }
     if (!Array.isArray(payload?.items) || payload.items.length < 1 || payload.items.length > 30) {
       return json({ success: false, error: "Cart must contain between 1 and 30 distinct products." }, 400);
@@ -201,7 +214,17 @@ Deno.serve(async (req: Request) => {
         customer_email: email,
         customer_phone: phone || null,
         shipping_address: address,
-        shipping_city: city || null,
+        shipping_city: city,
+        shipping_province_id: provinceId,
+        shipping_province: provinceName,
+        shipping_regency_id: regencyId,
+        shipping_regency: regencyName,
+        shipping_district_id: districtId,
+        shipping_district: districtName,
+        shipping_village_id: villageId,
+        shipping_village: villageName,
+        shipping_postal_code: postalCode,
+        shipping_delivery_notes: deliveryNotes || null,
         subtotal,
         shipping_cost: shippingCost,
         total_amount: totalAmount,
